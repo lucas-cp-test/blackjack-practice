@@ -202,6 +202,22 @@ function getBasicStrategyAction(playerCards, dealerUpCard) {
   return 'Stand'
 }
 
+function getActionFromStrategyTip(tip) {
+  if (tip.startsWith('Double')) {
+    return 'double'
+  }
+
+  if (tip.startsWith('Stand')) {
+    return 'stand'
+  }
+
+  if (tip.startsWith('Hit')) {
+    return 'hit'
+  }
+
+  return null
+}
+
 function getRoundOutcome(player, dealerCards) {
   const playerTotal = handValue(player.cards).total
   const dealerTotal = handValue(dealerCards).total
@@ -774,11 +790,36 @@ function App() {
 
       if (event.code === 'Space') {
         event.preventDefault()
-        if (gameRef.current.phase === 'finished' && !busyRef.current) {
+        const snapshot = gameRef.current
+
+        if (snapshot.phase === 'finished' && !busyRef.current) {
           void startRoundRef.current?.()
-        } else {
-          void hitRef.current?.()
+          return
         }
+
+        if (snapshot.phase !== 'playing' || busyRef.current) {
+          return
+        }
+
+        const actingPlayer = snapshot.players[snapshot.activePlayerIndex]
+        if (!actingPlayer || actingPlayer.id !== 'you') {
+          return
+        }
+
+        const tip = getBasicStrategyAction(actingPlayer.cards, getDealerUpCard(snapshot.dealer.cards))
+        const action = getActionFromStrategyTip(tip)
+
+        if (action === 'double') {
+          void doubleRef.current?.()
+          return
+        }
+
+        if (action === 'stand') {
+          standRef.current?.()
+          return
+        }
+
+        void hitRef.current?.()
         return
       }
 
@@ -842,6 +883,24 @@ function App() {
   const activePlayer = game.players[game.activePlayerIndex]
   const canAct = game.phase === 'playing' && activePlayer?.id === 'you' && !isBusy
   const canEditBet = (game.phase === 'ready' || game.phase === 'finished') && !isBusy
+  const spacebarActionLabel = (() => {
+    if (game.phase === 'finished' && !isBusy) {
+      return 'Next Round'
+    }
+
+    if (game.phase === 'playing' && activePlayer?.id === 'you' && !isBusy) {
+      const action = getActionFromStrategyTip(basicStrategyTip)
+      if (action === 'double') {
+        return 'Double'
+      }
+      if (action === 'stand') {
+        return 'Stand'
+      }
+      return 'Hit'
+    }
+
+    return 'Waiting'
+  })()
 
   const botSeats = BOT_SEAT_LAYOUTS[settings.extraPlayers] || BOT_SEAT_LAYOUTS[4]
 
@@ -967,6 +1026,7 @@ function App() {
                 })}
 
               <section className={`seat you ${activePlayer?.id === 'you' ? 'active' : ''}`}>
+                <p className="spacebar-pill">Spacebar: {spacebarActionLabel}</p>
                 <div className="seat-header">
                   <h2>You</h2>
                   <span>{handValue(you.cards).total || '-'}</span>

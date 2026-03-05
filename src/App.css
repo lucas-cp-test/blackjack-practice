@@ -421,6 +421,24 @@
   transform: translateX(-50%);
 }
 
+.spacebar-pill {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, calc(-100% - 0.35rem));
+  margin: 0;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--seat-border);
+  background: var(--panel-bg);
+  color: var(--text-main);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+  z-index: 4;
+}
+
 .seat.bot-top {
   top: 26%;
   left: 50%;
