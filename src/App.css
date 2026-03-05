@@ -1,0 +1,768 @@
+* {
+  box-sizing: border-box;
+}
+
+.app-shell {
+  --font-main: 'Avenir Next', 'Segoe UI', 'Trebuchet MS', sans-serif;
+  --font-display: 'Trebuchet MS', 'Avenir Next', sans-serif;
+  --text-main: #211a12;
+  --text-muted: #4d3b16;
+  --menu-eyebrow: #8a5b00;
+  --app-background:
+    radial-gradient(circle at 20% 0%, #ffecc2 0%, transparent 40%),
+    radial-gradient(circle at 80% 15%, #efd6a8 0%, transparent 35%),
+    linear-gradient(160deg, #f3e8ca 0%, #ead9b2 100%);
+
+  --panel-bg: #f4ead0;
+  --panel-border: #cda85f;
+
+  --felt-background:
+    radial-gradient(circle at 50% 10%, #2c8a5f 0%, transparent 40%),
+    radial-gradient(circle at 40% 80%, #236c4a 0%, transparent 35%),
+    linear-gradient(180deg, #1e6745, #13432f);
+  --table-border: #704616;
+  --table-inset: rgba(255, 228, 167, 0.32);
+
+  --seat-bg: rgba(18, 56, 40, 0.66);
+  --seat-border: rgba(249, 229, 190, 0.24);
+  --seat-text: #f8edd2;
+
+  --deck-1: #6f1a1a;
+  --deck-2: #8f2525;
+  --deck-border: #f8e5bd;
+  --deck-label: #fff;
+
+  --card-bg: #fffef8;
+  --card-border: #d2b079;
+  --card-text: #1d1d1d;
+  --card-red: #a22d1d;
+  --card-hidden-start: #7b1d1d;
+  --card-hidden-end: #b03232;
+  --card-hidden-stripe: rgba(255, 255, 255, 0.2);
+  --card-hidden-alt-stripe: rgba(255, 255, 255, 0.02);
+
+  --button-primary-start: #d7a325;
+  --button-primary-end: #bb7f00;
+  --button-primary-text: #fff;
+  --button-soft-bg: #eadab4;
+  --button-soft-text: #4f3810;
+
+  --chip-bg: #f0ce86;
+  --chip-text: #4b3206;
+  --active-outline: #f8d16f;
+  --active-glow: rgba(248, 209, 111, 0.22);
+
+  min-height: 100vh;
+  padding: 1.2rem;
+  color: var(--text-main);
+  background: var(--app-background);
+  font-family: var(--font-main);
+}
+
+.app-shell.theme-minimal {
+  --font-main: 'Avenir Next', 'Segoe UI', sans-serif;
+  --font-display: 'Avenir Next', 'Segoe UI', sans-serif;
+  --app-background:
+    linear-gradient(180deg, #f7f7f7 0%, #eceff1 100%);
+  --panel-bg: #ffffff;
+  --panel-border: #c9d0d6;
+  --text-main: #1d232a;
+  --text-muted: #4a5a68;
+  --menu-eyebrow: #4a5a68;
+  --felt-background:
+    linear-gradient(180deg, #dbe5ec 0%, #c6d3dc 100%);
+  --table-border: #8e9ba5;
+  --table-inset: rgba(255, 255, 255, 0.4);
+  --seat-bg: rgba(63, 82, 96, 0.26);
+  --seat-border: rgba(36, 49, 60, 0.35);
+  --seat-text: #12202d;
+  --deck-1: #445464;
+  --deck-2: #66798a;
+  --deck-border: #cfd8de;
+  --button-primary-start: #34495e;
+  --button-primary-end: #2a3d4f;
+  --button-soft-bg: #dde5eb;
+  --button-soft-text: #1e2e3b;
+  --chip-bg: #d8e5ee;
+  --chip-text: #1d3242;
+  --active-outline: #3f5b74;
+  --active-glow: rgba(63, 91, 116, 0.24);
+}
+
+.app-shell.theme-high-contrast {
+  --font-main: 'Arial Black', 'Segoe UI', sans-serif;
+  --font-display: 'Arial Black', 'Segoe UI', sans-serif;
+  --app-background: linear-gradient(180deg, #000000 0%, #1a1a1a 100%);
+  --panel-bg: #000000;
+  --panel-border: #ffffff;
+  --text-main: #ffffff;
+  --text-muted: #f0f0f0;
+  --menu-eyebrow: #ffd400;
+  --felt-background: repeating-linear-gradient(
+    90deg,
+    #000000,
+    #000000 18px,
+    #202020 18px,
+    #202020 36px
+  );
+  --table-border: #ffffff;
+  --table-inset: rgba(255, 255, 255, 0.75);
+  --seat-bg: rgba(0, 0, 0, 0.92);
+  --seat-border: #ffffff;
+  --seat-text: #ffffff;
+  --deck-1: #ffffff;
+  --deck-2: #ffd400;
+  --deck-border: #ffffff;
+  --deck-label: #000000;
+  --card-bg: #ffffff;
+  --card-border: #000000;
+  --card-text: #000000;
+  --card-red: #000000;
+  --card-hidden-start: #ffd400;
+  --card-hidden-end: #ffffff;
+  --card-hidden-stripe: rgba(0, 0, 0, 0.35);
+  --card-hidden-alt-stripe: rgba(255, 255, 255, 0.16);
+  --button-primary-start: #ffd400;
+  --button-primary-end: #ffd400;
+  --button-primary-text: #000000;
+  --button-soft-bg: #ffffff;
+  --button-soft-text: #000000;
+  --chip-bg: #ffd400;
+  --chip-text: #000000;
+  --active-outline: #ffd400;
+  --active-glow: rgba(255, 212, 0, 0.6);
+}
+
+.app-shell.theme-dark-mode {
+  --font-main: 'Segoe UI', 'Roboto', sans-serif;
+  --font-display: 'Segoe UI Semibold', 'Segoe UI', sans-serif;
+  --app-background:
+    radial-gradient(circle at 15% 8%, #24304f 0%, transparent 36%),
+    radial-gradient(circle at 85% 18%, #1e3655 0%, transparent 34%),
+    linear-gradient(170deg, #10171f 0%, #0c1218 100%);
+  --panel-bg: #17222d;
+  --panel-border: #324c64;
+  --text-main: #e8eff6;
+  --text-muted: #b4c6d6;
+  --menu-eyebrow: #9bc6ed;
+  --felt-background:
+    radial-gradient(circle at 50% 0%, #28557f 0%, transparent 44%),
+    linear-gradient(180deg, #162c45 0%, #101f32 100%);
+  --table-border: #34546f;
+  --table-inset: rgba(153, 193, 232, 0.2);
+  --seat-bg: rgba(5, 17, 31, 0.68);
+  --seat-border: rgba(157, 197, 235, 0.26);
+  --seat-text: #e8eff6;
+  --deck-1: #2f4762;
+  --deck-2: #547698;
+  --deck-border: #c7d5e3;
+  --card-bg: #f8fbff;
+  --card-border: #9cb7cf;
+  --button-primary-start: #4f8bc2;
+  --button-primary-end: #376b9b;
+  --button-soft-bg: #293b4b;
+  --button-soft-text: #e8eff6;
+  --chip-bg: #315676;
+  --chip-text: #e4f4ff;
+  --active-outline: #86b8e6;
+  --active-glow: rgba(134, 184, 230, 0.32);
+}
+
+.app-shell.theme-retro {
+  --font-main: 'Courier New', 'Lucida Console', monospace;
+  --font-display: 'Courier New', 'Lucida Console', monospace;
+  --app-background:
+    radial-gradient(circle at 10% 4%, #ff5fbd 0%, transparent 35%),
+    radial-gradient(circle at 78% 20%, #4efff5 0%, transparent 35%),
+    linear-gradient(180deg, #1b0b2e 0%, #080517 100%);
+  --panel-bg: rgba(24, 10, 45, 0.9);
+  --panel-border: #ff7fdb;
+  --text-main: #fff3ff;
+  --text-muted: #9cf6ff;
+  --menu-eyebrow: #ffd5ff;
+  --felt-background:
+    linear-gradient(180deg, #300d55 0%, #130728 100%);
+  --table-border: #ff9eed;
+  --table-inset: rgba(78, 255, 245, 0.32);
+  --seat-bg: rgba(27, 8, 48, 0.68);
+  --seat-border: rgba(180, 252, 255, 0.35);
+  --seat-text: #c9fdff;
+  --deck-1: #fc68d9;
+  --deck-2: #8944ff;
+  --deck-border: #fbe7ff;
+  --card-bg: #fff8ff;
+  --card-border: #f489ff;
+  --card-text: #2f0e52;
+  --card-red: #f317b9;
+  --button-primary-start: #ff50d9;
+  --button-primary-end: #7b3cff;
+  --button-soft-bg: #3f266a;
+  --button-soft-text: #eaf8ff;
+  --chip-bg: #4efff5;
+  --chip-text: #190d3a;
+  --active-outline: #4efff5;
+  --active-glow: rgba(78, 255, 245, 0.4);
+}
+
+.app-shell.theme-star-wars {
+  --font-main: 'Verdana', 'Tahoma', sans-serif;
+  --font-display: 'Impact', 'Arial Black', sans-serif;
+  --app-background:
+    radial-gradient(circle at 12% 10%, rgba(255, 234, 160, 0.12) 0%, transparent 30%),
+    radial-gradient(circle at 80% 18%, rgba(124, 178, 255, 0.2) 0%, transparent 32%),
+    linear-gradient(180deg, #03050d 0%, #000000 100%);
+  --panel-bg: rgba(12, 16, 30, 0.94);
+  --panel-border: #ffe280;
+  --text-main: #ffe280;
+  --text-muted: #a1c4ff;
+  --menu-eyebrow: #a1c4ff;
+  --felt-background:
+    radial-gradient(circle at 50% 0%, rgba(20, 89, 173, 0.55) 0%, transparent 45%),
+    linear-gradient(180deg, #080f1f 0%, #03060e 100%);
+  --table-border: #f6d056;
+  --table-inset: rgba(255, 240, 180, 0.25);
+  --seat-bg: rgba(2, 7, 16, 0.82);
+  --seat-border: rgba(255, 226, 128, 0.36);
+  --seat-text: #ffe280;
+  --deck-1: #17346d;
+  --deck-2: #2552a5;
+  --deck-border: #ffd969;
+  --card-bg: #10192e;
+  --card-border: #3d6ac6;
+  --card-text: #ffe280;
+  --card-red: #ff847d;
+  --card-hidden-start: #17346d;
+  --card-hidden-end: #2f65c4;
+  --card-hidden-stripe: rgba(255, 226, 128, 0.35);
+  --card-hidden-alt-stripe: rgba(24, 45, 90, 0.16);
+  --button-primary-start: #ffe280;
+  --button-primary-end: #d4ab2f;
+  --button-primary-text: #101625;
+  --button-soft-bg: #22385d;
+  --button-soft-text: #ffe280;
+  --chip-bg: #ffe280;
+  --chip-text: #161a26;
+  --active-outline: #ffe280;
+  --active-glow: rgba(255, 226, 128, 0.44);
+}
+
+.app-shell.theme-walrus {
+  --font-main: 'Gill Sans', 'Trebuchet MS', sans-serif;
+  --font-display: 'Gill Sans', 'Trebuchet MS', sans-serif;
+  --app-background:
+    radial-gradient(circle at 12% 4%, #dff8ff 0%, transparent 40%),
+    radial-gradient(circle at 86% 16%, #b9ebff 0%, transparent 35%),
+    linear-gradient(180deg, #eefafd 0%, #d5eef5 100%);
+  --panel-bg: #f4fbfd;
+  --panel-border: #80b1bf;
+  --text-main: #153745;
+  --text-muted: #2a6278;
+  --menu-eyebrow: #3d7f8f;
+  --felt-background:
+    radial-gradient(circle at 50% 0%, #9dd9eb 0%, transparent 44%),
+    linear-gradient(180deg, #6bb5c8 0%, #4a93a8 100%);
+  --table-border: #6a8f98;
+  --table-inset: rgba(250, 255, 255, 0.55);
+  --seat-bg: rgba(26, 92, 111, 0.48);
+  --seat-border: rgba(230, 248, 252, 0.52);
+  --seat-text: #f7ffff;
+  --deck-1: #6f543f;
+  --deck-2: #8f6d50;
+  --deck-border: #fff0d7;
+  --card-bg: #fffdf5;
+  --card-border: #9bc2ca;
+  --card-text: #193d4c;
+  --card-red: #a05d45;
+  --card-hidden-start: #84614f;
+  --card-hidden-end: #a57a63;
+  --button-primary-start: #4ea3ba;
+  --button-primary-end: #3e879b;
+  --button-soft-bg: #d4eef4;
+  --button-soft-text: #1e4f60;
+  --chip-bg: #c6ecf5;
+  --chip-text: #245062;
+  --active-outline: #ddf7ff;
+  --active-glow: rgba(221, 247, 255, 0.48);
+}
+
+.menu-screen {
+  min-height: calc(100vh - 2.4rem);
+  display: grid;
+  place-items: center;
+}
+
+.menu-card {
+  width: min(460px, 92vw);
+  background: var(--panel-bg);
+  border: 2px solid var(--panel-border);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 26px 50px rgba(58, 35, 4, 0.22);
+}
+
+.menu-card h1 {
+  margin: 0.2rem 0 1rem;
+  font-family: var(--font-display);
+  letter-spacing: 0.03em;
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  color: var(--menu-eyebrow);
+}
+
+.menu-card input[type='range'] {
+  width: 100%;
+  margin: 0.8rem 0;
+}
+
+.menu-count {
+  margin: 0 0 1.2rem;
+  font-weight: 600;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.top-bar h1 {
+  margin: 0;
+  font-size: clamp(1.3rem, 2vw, 1.8rem);
+  font-family: var(--font-display);
+  letter-spacing: 0.03em;
+}
+
+.top-bar p {
+  margin: 0.3rem 0 0;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.bar-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.table-area {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 1rem;
+}
+
+.felt {
+  position: relative;
+  min-height: 640px;
+  border-radius: 28px;
+  padding: 1rem;
+  border: 6px solid var(--table-border);
+  background: var(--felt-background);
+  overflow: hidden;
+  box-shadow: inset 0 0 0 2px var(--table-inset);
+}
+
+.deck {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 78px;
+  height: 112px;
+  border-radius: 12px;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--deck-border);
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--deck-1),
+    var(--deck-1) 8px,
+    var(--deck-2) 8px,
+    var(--deck-2) 16px
+  );
+  display: grid;
+  place-items: center;
+  color: var(--deck-label);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.seat {
+  position: absolute;
+  width: min(320px, 40vw);
+  padding: 0.65rem;
+  border-radius: 14px;
+  background: var(--seat-bg);
+  border: 1px solid var(--seat-border);
+  backdrop-filter: blur(1.5px);
+}
+
+.seat.active {
+  outline: 2px solid var(--active-outline);
+  box-shadow: 0 0 0 3px var(--active-glow);
+}
+
+.seat.dealer {
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.seat.you {
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.seat.bot-top {
+  top: 26%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.seat.bot-left {
+  top: 48%;
+  left: 1rem;
+  transform: translateY(-50%);
+}
+
+.seat.bot-right {
+  top: 48%;
+  right: 1rem;
+  transform: translateY(-50%);
+}
+
+.seat.bot-top-left {
+  top: 27%;
+  left: 12%;
+  transform: translateY(-50%);
+}
+
+.seat.bot-top-right {
+  top: 27%;
+  right: 12%;
+  transform: translateY(-50%);
+}
+
+.seat.dealer .playing-card {
+  --from-x: 0px;
+  --from-y: 200px;
+}
+
+.seat.you .playing-card {
+  --from-x: 0px;
+  --from-y: -200px;
+}
+
+.seat.bot-left .playing-card,
+.seat.bot-top-left .playing-card {
+  --from-x: 180px;
+  --from-y: 0px;
+}
+
+.seat.bot-right .playing-card,
+.seat.bot-top-right .playing-card {
+  --from-x: -180px;
+  --from-y: 0px;
+}
+
+.seat.bot-top .playing-card {
+  --from-x: 0px;
+  --from-y: 150px;
+}
+
+.seat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.45rem;
+  color: var(--seat-text);
+}
+
+.seat-header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.seat-header span {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.hand {
+  min-height: 108px;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.playing-card {
+  width: 70px;
+  height: 98px;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.3rem 0.34rem;
+  color: var(--card-text);
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
+  transform: translate3d(var(--from-x, 0), var(--from-y, 0), 0) scale(0.5) rotate(-9deg);
+  opacity: 0;
+  animation: dealIn 460ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation-delay: calc(var(--deal-order, 0) * 32ms);
+}
+
+.playing-card span:last-child {
+  align-self: flex-end;
+}
+
+.playing-card.red {
+  color: var(--card-red);
+}
+
+.playing-card.hidden {
+  background: linear-gradient(135deg, var(--card-hidden-start) 0%, var(--card-hidden-end) 100%);
+  border: 1px solid var(--deck-border);
+}
+
+.card-back {
+  flex: 1;
+  border-radius: 8px;
+  border: 1px solid rgba(247, 227, 175, 0.7);
+  background: repeating-linear-gradient(
+    45deg,
+    var(--card-hidden-stripe),
+    var(--card-hidden-stripe) 6px,
+    var(--card-hidden-alt-stripe) 6px,
+    var(--card-hidden-alt-stripe) 12px
+  );
+}
+
+@keyframes dealIn {
+  0% {
+    transform: translate3d(var(--from-x, 0), var(--from-y, 0), 0) scale(0.55) rotate(-9deg);
+    opacity: 0;
+  }
+  65% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.controls,
+.cheat-sheet,
+.summary-card {
+  background: var(--panel-bg);
+  border: 2px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 0.85rem;
+}
+
+.controls {
+  display: grid;
+  gap: 0.55rem;
+}
+
+button,
+select {
+  border: none;
+  border-radius: 10px;
+  padding: 0.62rem 0.9rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+button.primary {
+  color: var(--button-primary-text);
+  background: linear-gradient(180deg, var(--button-primary-start), var(--button-primary-end));
+}
+
+button.soft {
+  background: var(--button-soft-bg);
+  color: var(--button-soft-text);
+}
+
+select {
+  width: 100%;
+  color: var(--text-main);
+  background: var(--panel-bg);
+  border: 2px solid var(--panel-border);
+  margin-top: 0.35rem;
+}
+
+.result-chip {
+  margin: 0.45rem 0 0;
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--chip-text);
+  background: var(--chip-bg);
+}
+
+.seat-footer {
+  min-height: 1.5rem;
+}
+
+.cheat-sheet h3,
+.summary-card h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.cheat-sheet p,
+.summary-card p,
+.cheat-sheet small {
+  margin: 0.4rem 0;
+}
+
+.modal-layer {
+  position: fixed;
+  inset: 0;
+  background: rgba(24, 16, 3, 0.52);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.settings-modal {
+  width: min(460px, 94vw);
+  background: var(--panel-bg);
+  border: 2px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 1rem;
+}
+
+.settings-modal h2 {
+  margin-top: 0;
+}
+
+.settings-modal input[type='range'] {
+  width: 100%;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.6rem 0;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+@media (max-width: 1060px) {
+  .table-area {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .controls {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 780px) {
+  .app-shell {
+    padding: 0.7rem;
+    padding-bottom: calc(6.6rem + env(safe-area-inset-bottom));
+  }
+
+  .felt {
+    min-height: 720px;
+  }
+
+  .seat {
+    width: min(290px, 66vw);
+  }
+
+  .seat.bot-left,
+  .seat.bot-right {
+    top: 42%;
+  }
+
+  .seat.bot-left {
+    left: 0.3rem;
+  }
+
+  .seat.bot-right {
+    right: 0.3rem;
+  }
+
+  .playing-card {
+    width: 60px;
+    height: 86px;
+  }
+
+  .sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .controls {
+    position: fixed;
+    left: 50%;
+    bottom: calc(0.55rem + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    width: min(96vw, 620px);
+    z-index: 80;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.42rem;
+    padding: 0.52rem;
+    border-radius: 16px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.34);
+    backdrop-filter: blur(8px);
+  }
+
+  .controls button {
+    font-size: 0.84rem;
+    padding: 0.52rem 0.18rem;
+  }
+
+  .top-bar {
+    flex-direction: column;
+  }
+
+  .bar-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
