@@ -840,4 +840,8 @@ select {
     width: 100%;
     justify-content: flex-start;
   }
+
+  .spacebar-pill {
+    display: none;
+  }
 }

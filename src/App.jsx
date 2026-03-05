@@ -21,7 +21,7 @@ const THEME_OPTIONS = [
   { value: 'walrus', label: 'Walrus' },
 ]
 
-const DEFAULT_BET = 25
+const DEFAULT_BET = 10
 const BET_PRESET_AMOUNTS = [10, 25, 50, 100, 250]
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
@@ -274,14 +274,14 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settings, setSettings] = useState({
-    extraPlayers: 2,
+    extraPlayers: 0,
     showCheatSheet: true,
     theme: 'minimal',
   })
   const [settingsDraft, setSettingsDraft] = useState(settings)
   const [isBusy, setIsBusy] = useState(false)
   const [selectedBet, setSelectedBet] = useState(DEFAULT_BET)
-  const [game, setGame] = useState(() => newRoundState(2))
+  const [game, setGame] = useState(() => newRoundState(0))
 
   const gameRef = useRef(game)
   const settingsRef = useRef(settings)
