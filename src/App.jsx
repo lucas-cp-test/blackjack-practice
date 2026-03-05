@@ -23,6 +23,9 @@ const THEME_OPTIONS = [
 
 const DEFAULT_BET = 10
 const BET_PRESET_AMOUNTS = [10, 25, 50, 100, 250]
+const DECK_COUNT = 4
+const MIN_CUT_CARD_REMAINING = 52
+const MAX_CUT_CARD_REMAINING = 78
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -35,7 +38,36 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 let nextCardId = 0
 
-function createShoe(deckCount = 4) {
+function shuffleCards(cards) {
+  const next = [...cards]
+
+  for (let i = next.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[next[i], next[j]] = [next[j], next[i]]
+  }
+
+  return next
+}
+
+function getCutCardRemaining(totalCards) {
+  const maxRemaining = Math.min(MAX_CUT_CARD_REMAINING, Math.max(12, totalCards - 10))
+  const minRemaining = Math.min(MIN_CUT_CARD_REMAINING, maxRemaining)
+  return Math.floor(Math.random() * (maxRemaining - minRemaining + 1)) + minRemaining
+}
+
+function createShoeState(existingCards = null) {
+  const sourceCards =
+    existingCards && existingCards.length >= 52 ? shuffleCards(existingCards) : createShoe(DECK_COUNT)
+
+  return {
+    shoe: sourceCards,
+    discard: [],
+    cutCardRemaining: getCutCardRemaining(sourceCards.length),
+    cutCardReached: false,
+  }
+}
+
+function createShoe(deckCount = DECK_COUNT) {
   const cards = []
 
   for (let deck = 0; deck < deckCount; deck += 1) {
@@ -51,12 +83,7 @@ function createShoe(deckCount = 4) {
     }
   }
 
-  for (let i = cards.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[cards[i], cards[j]] = [cards[j], cards[i]]
-  }
-
-  return cards
+  return shuffleCards(cards)
 }
 
 function createPlayers(extraPlayers) {
@@ -91,11 +118,21 @@ function newRoundState(
   record = { wins: 0, losses: 0, pushes: 0 },
   money = { net: 0, lastChange: 0 },
   activeBet = DEFAULT_BET,
+  existingDiscard = [],
+  cutCardRemaining = MIN_CUT_CARD_REMAINING,
+  cutCardReached = false,
 ) {
-  const shoe = existingShoe.length < 52 ? createShoe() : [...existingShoe]
+  const freshShoeState = existingShoe.length < 52 ? createShoeState() : null
+  const shoe = freshShoeState ? freshShoeState.shoe : [...existingShoe]
+  const discard = freshShoeState ? freshShoeState.discard : [...existingDiscard]
+  const resolvedCutCardRemaining = freshShoeState ? freshShoeState.cutCardRemaining : cutCardRemaining
+  const resolvedCutCardReached = freshShoeState ? false : cutCardReached
 
   return {
     shoe,
+    discard,
+    cutCardRemaining: resolvedCutCardRemaining,
+    cutCardReached: resolvedCutCardReached,
     players: createPlayers(extraPlayers),
     dealer: {
       id: 'dealer',
@@ -344,6 +381,9 @@ function App() {
         previous.record,
         previous.money,
         previous.activeBet,
+        previous.discard,
+        previous.cutCardRemaining,
+        previous.cutCardReached,
       ),
     )
   }
@@ -354,14 +394,18 @@ function App() {
       const drawn = shoe.pop()
 
       if (!drawn) {
+        const reshuffled = createShoeState([...previous.shoe, ...previous.discard])
         return {
           ...newRoundState(
             settingsRef.current.extraPlayers,
-            [],
+            reshuffled.shoe,
             previous.roundSummary,
             previous.record,
             previous.money,
             previous.activeBet,
+            reshuffled.discard,
+            reshuffled.cutCardRemaining,
+            reshuffled.cutCardReached,
           ),
           message: 'Shuffling a fresh shoe...',
         }
@@ -376,6 +420,8 @@ function App() {
       const nextState = {
         ...previous,
         shoe,
+        discard: [...previous.discard, drawn],
+        cutCardReached: previous.cutCardReached || shoe.length <= previous.cutCardRemaining,
         dealTick: previous.dealTick + 1,
       }
 
@@ -472,7 +518,9 @@ function App() {
           net: previous.money.net + roundNet,
           lastChange: roundNet,
         },
-        message: 'Round complete.',
+        message: previous.cutCardReached
+          ? 'Round complete. Cut card reached - shoe will shuffle next hand.'
+          : 'Round complete.',
       }
     })
 
@@ -599,19 +647,34 @@ function App() {
 
     const nextPlayers = createPlayers(settingsRef.current.extraPlayers)
 
-    updateGame((previous) => ({
-      ...newRoundState(
-        settingsRef.current.extraPlayers,
-        previous.shoe,
-        previous.roundSummary,
-        previous.record,
-        previous.money,
-        selectedBet,
-      ),
-      players: nextPlayers,
-      phase: 'dealing',
-      message: 'Dealing cards...',
-    }))
+    updateGame((previous) => {
+      const shouldReshuffle = previous.cutCardReached || previous.shoe.length < 20
+      const nextShoeState = shouldReshuffle
+        ? createShoeState([...previous.shoe, ...previous.discard])
+        : {
+            shoe: previous.shoe,
+            discard: previous.discard,
+            cutCardRemaining: previous.cutCardRemaining,
+            cutCardReached: previous.cutCardReached,
+          }
+
+      return {
+        ...newRoundState(
+          settingsRef.current.extraPlayers,
+          nextShoeState.shoe,
+          previous.roundSummary,
+          previous.record,
+          previous.money,
+          selectedBet,
+          nextShoeState.discard,
+          nextShoeState.cutCardRemaining,
+          nextShoeState.cutCardReached,
+        ),
+        players: nextPlayers,
+        phase: 'dealing',
+        message: shouldReshuffle ? 'Cut card reached. Shuffling the shoe...' : 'Dealing cards...',
+      }
+    })
 
     for (const player of nextPlayers) {
       await dealCardTo(player.id)
@@ -901,6 +964,12 @@ function App() {
   const activePlayer = game.players[game.activePlayerIndex]
   const canAct = game.phase === 'playing' && activePlayer?.id === 'you' && !isBusy
   const canEditBet = (game.phase === 'ready' || game.phase === 'finished') && !isBusy
+  const totalCardsInShoe = game.shoe.length + game.discard.length
+  const dealtPercent = totalCardsInShoe > 0 ? (game.discard.length / totalCardsInShoe) * 100 : 0
+  const cutCardPercentRaw =
+    totalCardsInShoe > 0 ? ((totalCardsInShoe - game.cutCardRemaining) / totalCardsInShoe) * 100 : 0
+  const cutCardPercent = Math.min(96, Math.max(4, cutCardPercentRaw))
+  const cardsUntilCut = Math.max(game.shoe.length - game.cutCardRemaining, 0)
   const spacebarActionLabel = (() => {
     if (game.phase === 'finished' && !isBusy) {
       return 'Next Round'
@@ -970,6 +1039,25 @@ function App() {
               <h1>Blackjack Practice</h1>
               <p>{game.message}</p>
             </div>
+            {!isMobileLayout ? (
+              <section className="shoe-visual" aria-label="Current shoe status">
+                <div className="shoe-visual-head">
+                  <strong>Shoe</strong>
+                  <span>
+                    {game.shoe.length}/{totalCardsInShoe}
+                  </span>
+                </div>
+                <div className="shoe-track" role="presentation">
+                  <div className="shoe-progress" style={{ width: `${dealtPercent}%` }} />
+                  <div className="cut-card-marker" style={{ left: `${cutCardPercent}%` }}>
+                    CUT
+                  </div>
+                </div>
+                <p className="shoe-visual-note">
+                  {game.cutCardReached ? 'Cut card reached: reshuffle on next hand' : `${cardsUntilCut} cards to cut`}
+                </p>
+              </section>
+            ) : null}
             {!isMobileLayout ? (
               <div className="bar-actions">
                 <button className="soft" onClick={toggleCheatSheet}>
@@ -1144,6 +1232,27 @@ function App() {
                           <p>Last Hand: {formatSignedMoney(game.money.lastChange)}</p>
                           <p>Total Net: {formatSignedMoney(game.money.net)}</p>
                         </section>
+
+                        <section className="shoe-visual mobile-shoe-visual" aria-label="Current shoe status">
+                          <div className="shoe-visual-head">
+                            <strong>Shoe</strong>
+                            <span>
+                              {game.shoe.length}/{totalCardsInShoe}
+                            </span>
+                          </div>
+                          <div className="shoe-track" role="presentation">
+                            <div className="shoe-progress" style={{ width: `${dealtPercent}%` }} />
+                            <div className="cut-card-marker" style={{ left: `${cutCardPercent}%` }}>
+                              CUT
+                            </div>
+                          </div>
+                          <p className="shoe-visual-note">
+                            {game.cutCardReached
+                              ? 'Cut card reached: reshuffle on next hand'
+                              : `${cardsUntilCut} cards to cut`}
+                          </p>
+                        </section>
+
                       </>
                     ) : null}
 

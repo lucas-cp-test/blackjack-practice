@@ -352,6 +352,62 @@
   justify-content: flex-end;
 }
 
+.shoe-visual {
+  flex: 1;
+  min-width: 220px;
+  max-width: 360px;
+  background: var(--panel-bg);
+  border: 2px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 0.48rem 0.6rem;
+}
+
+.shoe-visual-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.shoe-track {
+  position: relative;
+  margin-top: 0.34rem;
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--button-soft-bg);
+  border: 1px solid var(--panel-border);
+}
+
+.shoe-progress {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(180deg, var(--button-primary-start), var(--button-primary-end));
+}
+
+.cut-card-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0.02rem 0.25rem;
+  border-radius: 999px;
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--button-primary-text);
+  background: var(--table-border);
+  border: 1px solid var(--deck-border);
+  white-space: nowrap;
+}
+
+.shoe-visual-note {
+  margin: 0.34rem 0 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
 .table-area {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
@@ -796,6 +852,8 @@ select {
   }
 
   .top-bar {
+    flex-direction: column;
+    align-items: stretch;
     margin-bottom: 0.45rem;
     gap: 0.35rem;
   }
@@ -807,6 +865,12 @@ select {
   .top-bar p {
     font-size: 0.86rem;
     margin-top: 0.16rem;
+  }
+
+  .shoe-visual {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
   }
 
   .table-area {
@@ -961,6 +1025,10 @@ select {
     margin: 0.1rem 0 0;
     font-size: 0.8rem;
     color: var(--text-muted);
+  }
+
+  .mobile-shoe-visual {
+    margin: 0.5rem 0 0;
   }
 
   .mobile-summary-card {
