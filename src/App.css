@@ -590,7 +590,8 @@
 .controls,
 .bet-panel,
 .cheat-sheet,
-.summary-card {
+.summary-card,
+.settings-card {
   background: var(--panel-bg);
   border: 2px solid var(--panel-border);
   border-radius: 14px;
@@ -711,15 +712,25 @@ select {
 }
 
 .cheat-sheet h3,
-.summary-card h3 {
+.summary-card h3,
+.settings-card h3 {
   margin: 0 0 0.35rem;
   font-size: 1rem;
 }
 
 .cheat-sheet p,
 .summary-card p,
+.settings-card p,
 .cheat-sheet small {
   margin: 0.4rem 0;
+}
+
+.settings-card input[type='range'] {
+  width: 100%;
+}
+
+.settings-card .primary {
+  margin-top: 0.5rem;
 }
 
 .modal-layer {
@@ -778,70 +789,196 @@ select {
 
 @media (max-width: 780px) {
   .app-shell {
-    padding: 0.7rem;
-    padding-bottom: calc(6.6rem + env(safe-area-inset-bottom));
+    min-height: 100dvh;
+    height: 100dvh;
+    padding: 0.55rem;
+    overflow: hidden;
+  }
+
+  .top-bar {
+    margin-bottom: 0.45rem;
+    gap: 0.35rem;
+  }
+
+  .top-bar h1 {
+    font-size: 1.1rem;
+  }
+
+  .top-bar p {
+    font-size: 0.86rem;
+    margin-top: 0.16rem;
+  }
+
+  .table-area {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 48dvh) minmax(0, 46dvh);
+    gap: 0.55rem;
+    height: calc(100dvh - 5.9rem - env(safe-area-inset-bottom));
   }
 
   .felt {
-    min-height: 720px;
+    min-height: 0;
+    height: 100%;
+    padding: 0.45rem;
+    border-width: 4px;
+    border-radius: 18px;
+  }
+
+  .deck {
+    display: none;
   }
 
   .seat {
-    width: min(290px, 66vw);
+    width: min(208px, 62vw);
+    padding: 0.35rem 0.42rem;
+    border-radius: 10px;
   }
 
   .seat.bot-left,
   .seat.bot-right {
-    top: 42%;
+    top: 57%;
   }
 
   .seat.bot-left {
-    left: 0.3rem;
+    left: 0.25rem;
   }
 
   .seat.bot-right {
-    right: 0.3rem;
+    right: 0.25rem;
+  }
+
+  .seat.bot-top {
+    top: 33%;
+  }
+
+  .seat.bot-top-left {
+    top: 34%;
+    left: 3.5%;
+  }
+
+  .seat.bot-top-right {
+    top: 34%;
+    right: 3.5%;
+  }
+
+  .seat.dealer {
+    top: 0.35rem;
+  }
+
+  .seat.you {
+    bottom: 0.35rem;
+  }
+
+  .seat-header {
+    margin-bottom: 0.25rem;
+  }
+
+  .seat-header h2 {
+    font-size: 0.8rem;
+  }
+
+  .seat-header span {
+    font-size: 0.76rem;
+  }
+
+  .hand {
+    min-height: 72px;
+    gap: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 0.1rem;
+    scrollbar-width: none;
+  }
+
+  .hand::-webkit-scrollbar {
+    display: none;
   }
 
   .playing-card {
-    width: 60px;
-    height: 86px;
+    width: 46px;
+    height: 66px;
+    padding: 0.14rem 0.2rem;
+    border-radius: 8px;
+    font-size: 0.72rem;
+    margin-left: -0.78rem;
   }
 
-  .sidebar {
-    grid-template-columns: 1fr;
-  }
-
-  .controls {
-    position: fixed;
-    left: 50%;
-    bottom: calc(0.55rem + env(safe-area-inset-bottom));
-    transform: translateX(-50%);
-    width: min(96vw, 620px);
-    z-index: 80;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.42rem;
-    padding: 0.52rem;
-    border-radius: 16px;
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.34);
-    backdrop-filter: blur(8px);
-  }
-
-  .controls button {
-    font-size: 0.84rem;
-    padding: 0.52rem 0.18rem;
-  }
-
-  .top-bar {
-    flex-direction: column;
-  }
-
-  .bar-actions {
-    width: 100%;
-    justify-content: flex-start;
+  .playing-card:first-child {
+    margin-left: 0;
   }
 
   .spacebar-pill {
     display: none;
+  }
+
+  .sidebar.mobile-sidebar {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    overflow: hidden;
+  }
+
+  .mobile-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.34rem;
+    flex: 0 0 auto;
+    padding: 0.22rem 0.18rem;
+  }
+
+  .mobile-tabs button {
+    padding: 0.42rem 0.2rem;
+    font-size: 0.78rem;
+  }
+
+  .mobile-tabs button.is-selected {
+    outline: 2px solid var(--active-outline);
+    box-shadow: 0 0 0 3px var(--active-glow);
+  }
+
+  .mobile-tab-panel {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .mobile-tab-panel .controls {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.42rem;
+  }
+
+  .mobile-tab-panel .controls button {
+    font-size: 0.82rem;
+    padding: 0.5rem 0.2rem;
+  }
+
+  .mobile-play-tip {
+    grid-column: 1 / -1;
+    margin: 0.1rem 0 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .mobile-summary-card {
+    margin-top: 0.5rem;
+  }
+
+  .mobile-tab-panel .bet-presets {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .mobile-tab-panel .settings-card label {
+    display: block;
+    margin-top: 0.48rem;
+    font-size: 0.88rem;
+    font-weight: 700;
+  }
+
+  .mobile-tab-panel .check-row {
+    margin: 0.45rem 0;
   }
 }

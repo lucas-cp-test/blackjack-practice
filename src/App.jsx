@@ -280,6 +280,10 @@ function App() {
   })
   const [settingsDraft, setSettingsDraft] = useState(settings)
   const [isBusy, setIsBusy] = useState(false)
+  const [isMobileLayout, setIsMobileLayout] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 780px)').matches : false,
+  )
+  const [mobileTab, setMobileTab] = useState('play')
   const [selectedBet, setSelectedBet] = useState(DEFAULT_BET)
   const [game, setGame] = useState(() => newRoundState(0))
 
@@ -302,6 +306,21 @@ function App() {
   useEffect(() => {
     settingsRef.current = settings
   }, [settings])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined
+    }
+
+    const mediaQuery = window.matchMedia('(max-width: 780px)')
+    const syncLayout = (event) => {
+      setIsMobileLayout(event.matches)
+    }
+
+    mediaQuery.addEventListener('change', syncLayout)
+
+    return () => mediaQuery.removeEventListener('change', syncLayout)
+  }, [])
 
   const updateGame = (updater) => {
     setGame((previous) => {
@@ -878,7 +897,6 @@ function App() {
 
   const dealerUpCard = getDealerUpCard(game.dealer.cards)
   const basicStrategyTip = getBasicStrategyAction(you.cards, dealerUpCard)
-  const totalDecisions = game.record.wins + game.record.losses + game.record.pushes
 
   const activePlayer = game.players[game.activePlayerIndex]
   const canAct = game.phase === 'playing' && activePlayer?.id === 'you' && !isBusy
@@ -952,14 +970,16 @@ function App() {
               <h1>Blackjack Practice</h1>
               <p>{game.message}</p>
             </div>
-            <div className="bar-actions">
-              <button className="soft" onClick={toggleCheatSheet}>
-                Cheat Sheet: {settings.showCheatSheet ? 'On' : 'Off'}
-              </button>
-              <button className="soft" onClick={openSettings}>
-                Game Settings
-              </button>
-            </div>
+            {!isMobileLayout ? (
+              <div className="bar-actions">
+                <button className="soft" onClick={toggleCheatSheet}>
+                  Cheat Sheet: {settings.showCheatSheet ? 'On' : 'Off'}
+                </button>
+                <button className="soft" onClick={openSettings}>
+                  Game Settings
+                </button>
+              </div>
+            ) : null}
           </header>
 
           <main className="table-area">
@@ -1050,88 +1070,272 @@ function App() {
               </section>
             </div>
 
-            <aside className="sidebar">
-              <section className="bet-panel">
-                <h3>Betting</h3>
-                <p className="bankroll-line">Bankroll: <strong>∞</strong></p>
-
-                <label htmlFor="bet-amount">Next hand wager</label>
-                <input
-                  id="bet-amount"
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={selectedBet}
-                  disabled={!canEditBet}
-                  onChange={(event) => {
-                    const numeric = Number(event.target.value)
-                    const nextBet = Math.max(1, Number.isFinite(numeric) ? Math.floor(numeric) : DEFAULT_BET)
-                    setSelectedBet(nextBet)
-                  }}
-                />
-
-                <div className="bet-presets" role="group" aria-label="Preset bet amounts">
-                  {BET_PRESET_AMOUNTS.map((amount) => (
+            <aside className={`sidebar ${isMobileLayout ? 'mobile-sidebar' : ''}`}>
+              {isMobileLayout ? (
+                <>
+                  <section className="mobile-tabs" role="tablist" aria-label="Mobile control tabs">
                     <button
-                      key={amount}
                       type="button"
-                      className={`soft ${selectedBet === amount ? 'is-selected' : ''}`}
-                      disabled={!canEditBet}
-                      onClick={() => setSelectedBet(amount)}
+                      className={`soft ${mobileTab === 'play' ? 'is-selected' : ''}`}
+                      role="tab"
+                      aria-selected={mobileTab === 'play'}
+                      onClick={() => setMobileTab('play')}
                     >
-                      {formatMoney(amount)}
+                      Play
                     </button>
-                  ))}
-                </div>
+                    <button
+                      type="button"
+                      className={`soft ${mobileTab === 'bet' ? 'is-selected' : ''}`}
+                      role="tab"
+                      aria-selected={mobileTab === 'bet'}
+                      onClick={() => setMobileTab('bet')}
+                    >
+                      Bet
+                    </button>
+                    <button
+                      type="button"
+                      className={`soft ${mobileTab === 'settings' ? 'is-selected' : ''}`}
+                      role="tab"
+                      aria-selected={mobileTab === 'settings'}
+                      onClick={() => {
+                        setSettingsDraft({ ...settingsRef.current })
+                        setMobileTab('settings')
+                      }}
+                    >
+                      Settings
+                    </button>
+                  </section>
 
-                <p className="bet-lock-note">
-                  {canEditBet ? 'Bet locks in when you deal.' : 'Finish this hand to change your next bet.'}
-                </p>
-              </section>
+                  <div className="mobile-tab-panel">
+                    {mobileTab === 'play' ? (
+                      <>
+                        <section className="controls">
+                          <button className="primary" disabled={!canAct} onClick={() => void handleHit()}>
+                            Hit
+                          </button>
+                          <button className="primary" disabled={!canAct} onClick={handleStand}>
+                            Stand
+                          </button>
+                          <button
+                            className="primary"
+                            disabled={!canAct || you.cards.length !== 2}
+                            onClick={() => void handleDouble()}
+                          >
+                            Double
+                          </button>
+                          <button
+                            className="soft"
+                            onClick={() => void startRound()}
+                            disabled={game.phase === 'dealing'}
+                          >
+                            {game.phase === 'finished' ? 'Next' : 'Redeal'}
+                          </button>
+                          <p className="mobile-play-tip">
+                            Best Move: <strong>{basicStrategyTip}</strong>
+                          </p>
+                        </section>
 
-              <section className="controls">
-                <button className="primary" disabled={!canAct} onClick={() => void handleHit()}>
-                  Hit
-                </button>
-                <button className="primary" disabled={!canAct} onClick={handleStand}>
-                  Stand
-                </button>
-                <button
-                  className="primary"
-                  disabled={!canAct || you.cards.length !== 2}
-                  onClick={() => void handleDouble()}
-                >
-                  Double
-                </button>
-                <button className="soft" onClick={() => void startRound()} disabled={game.phase === 'dealing'}>
-                  {game.phase === 'finished' ? 'Next Round' : 'Redeal'}
-                </button>
-              </section>
+                        <section className="summary-card mobile-summary-card">
+                          <h3>Round Summary</h3>
+                          <p>
+                            You: {game.record.wins}W / {game.record.losses}L / {game.record.pushes}P
+                          </p>
+                          <p>Hand Bet: {formatMoney(game.activeBet)}</p>
+                          <p>Last Hand: {formatSignedMoney(game.money.lastChange)}</p>
+                          <p>Total Net: {formatSignedMoney(game.money.net)}</p>
+                        </section>
+                      </>
+                    ) : null}
 
-              {settings.showCheatSheet ? (
-                <section className="cheat-sheet">
-                  <h3>Basic Strategy</h3>
-                  <p>
-                    Dealer Up Card:{' '}
-                    <strong>{dealerUpCard ? `${dealerUpCard.rank}${dealerUpCard.suit}` : '-'}</strong>
-                  </p>
-                  <p>
-                    Your Best Move: <strong>{basicStrategyTip}</strong>
-                  </p>
-                  <small>Static chart advice. No card counting adjustments.</small>
-                </section>
-              ) : null}
+                    {mobileTab === 'bet' ? (
+                      <section className="bet-panel">
+                        <h3>Betting</h3>
+                        <p className="bankroll-line">Bankroll: <strong>∞</strong></p>
 
-              <section className="summary-card">
-                <h3>Round Summary</h3>
-                <p>
-                  You: {game.record.wins}W / {game.record.losses}L / {game.record.pushes}P
-                </p>
-                <p>Hand Bet: {formatMoney(game.activeBet)}</p>
-                <p>Last Hand: {formatSignedMoney(game.money.lastChange)}</p>
-                <p>Total Net: {formatSignedMoney(game.money.net)}</p>
-                <p>{game.roundSummary || `Hands played: ${totalDecisions}`}</p>
-              </section>
+                        <label htmlFor="mobile-bet-amount">Next hand wager</label>
+                        <input
+                          id="mobile-bet-amount"
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={selectedBet}
+                          disabled={!canEditBet}
+                          onChange={(event) => {
+                            const numeric = Number(event.target.value)
+                            const nextBet = Math.max(
+                              1,
+                              Number.isFinite(numeric) ? Math.floor(numeric) : DEFAULT_BET,
+                            )
+                            setSelectedBet(nextBet)
+                          }}
+                        />
+
+                        <div className="bet-presets" role="group" aria-label="Preset bet amounts">
+                          {BET_PRESET_AMOUNTS.map((amount) => (
+                            <button
+                              key={amount}
+                              type="button"
+                              className={`soft ${selectedBet === amount ? 'is-selected' : ''}`}
+                              disabled={!canEditBet}
+                              onClick={() => setSelectedBet(amount)}
+                            >
+                              {formatMoney(amount)}
+                            </button>
+                          ))}
+                        </div>
+
+                        <p className="bet-lock-note">
+                          {canEditBet ? 'Bet locks in when you deal.' : 'Finish this hand to change your next bet.'}
+                        </p>
+                      </section>
+                    ) : null}
+
+                    {mobileTab === 'settings' ? (
+                      <section className="settings-card">
+                        <h3>Game Settings</h3>
+
+                        <label htmlFor="mobile-settings-extra-players">
+                          Players besides you and the dealer
+                        </label>
+                        <input
+                          id="mobile-settings-extra-players"
+                          type="range"
+                          min="0"
+                          max="4"
+                          value={settingsDraft.extraPlayers}
+                          onChange={(event) =>
+                            setSettingsDraft((previous) => ({
+                              ...previous,
+                              extraPlayers: Number(event.target.value),
+                            }))
+                          }
+                        />
+                        <p>{settingsDraft.extraPlayers} additional player(s)</p>
+
+                        <label htmlFor="mobile-settings-theme">Theme</label>
+                        <select
+                          id="mobile-settings-theme"
+                          value={settingsDraft.theme}
+                          onChange={(event) =>
+                            setSettingsDraft((previous) => ({
+                              ...previous,
+                              theme: event.target.value,
+                            }))
+                          }
+                        >
+                          {THEME_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+
+                        <label className="check-row" htmlFor="mobile-settings-cheat-sheet">
+                          <input
+                            id="mobile-settings-cheat-sheet"
+                            type="checkbox"
+                            checked={settingsDraft.showCheatSheet}
+                            onChange={(event) =>
+                              setSettingsDraft((previous) => ({
+                                ...previous,
+                                showCheatSheet: event.target.checked,
+                              }))
+                            }
+                          />
+                          Show cheat sheet card
+                        </label>
+
+                        <button className="primary" onClick={() => void applySettings()}>
+                          Save Settings
+                        </button>
+                      </section>
+                    ) : null}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <section className="bet-panel">
+                    <h3>Betting</h3>
+                    <p className="bankroll-line">Bankroll: <strong>∞</strong></p>
+
+                    <label htmlFor="bet-amount">Next hand wager</label>
+                    <input
+                      id="bet-amount"
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={selectedBet}
+                      disabled={!canEditBet}
+                      onChange={(event) => {
+                        const numeric = Number(event.target.value)
+                        const nextBet = Math.max(1, Number.isFinite(numeric) ? Math.floor(numeric) : DEFAULT_BET)
+                        setSelectedBet(nextBet)
+                      }}
+                    />
+
+                    <div className="bet-presets" role="group" aria-label="Preset bet amounts">
+                      {BET_PRESET_AMOUNTS.map((amount) => (
+                        <button
+                          key={amount}
+                          type="button"
+                          className={`soft ${selectedBet === amount ? 'is-selected' : ''}`}
+                          disabled={!canEditBet}
+                          onClick={() => setSelectedBet(amount)}
+                        >
+                          {formatMoney(amount)}
+                        </button>
+                      ))}
+                    </div>
+
+                    <p className="bet-lock-note">
+                      {canEditBet ? 'Bet locks in when you deal.' : 'Finish this hand to change your next bet.'}
+                    </p>
+                  </section>
+
+                  <section className="controls">
+                    <button className="primary" disabled={!canAct} onClick={() => void handleHit()}>
+                      Hit
+                    </button>
+                    <button className="primary" disabled={!canAct} onClick={handleStand}>
+                      Stand
+                    </button>
+                    <button
+                      className="primary"
+                      disabled={!canAct || you.cards.length !== 2}
+                      onClick={() => void handleDouble()}
+                    >
+                      Double
+                    </button>
+                    <button className="soft" onClick={() => void startRound()} disabled={game.phase === 'dealing'}>
+                      {game.phase === 'finished' ? 'Next Round' : 'Redeal'}
+                    </button>
+                  </section>
+
+                  {settings.showCheatSheet ? (
+                    <section className="cheat-sheet">
+                      <h3>Basic Strategy</h3>
+                      <p>
+                        Dealer Up Card:{' '}
+                        <strong>{dealerUpCard ? `${dealerUpCard.rank}${dealerUpCard.suit}` : '-'}</strong>
+                      </p>
+                      <p>
+                        Your Best Move: <strong>{basicStrategyTip}</strong>
+                      </p>
+                      <small>Static chart advice. No card counting adjustments.</small>
+                    </section>
+                  ) : null}
+
+                  <section className="summary-card">
+                    <h3>Round Summary</h3>
+                    <p>
+                      You: {game.record.wins}W / {game.record.losses}L / {game.record.pushes}P
+                    </p>
+                    <p>Hand Bet: {formatMoney(game.activeBet)}</p>
+                    <p>Last Hand: {formatSignedMoney(game.money.lastChange)}</p>
+                    <p>Total Net: {formatSignedMoney(game.money.net)}</p>
+                  </section>
+                </>
+              )}
             </aside>
           </main>
         </>
