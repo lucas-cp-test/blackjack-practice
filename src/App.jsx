@@ -21,6 +21,16 @@ const THEME_OPTIONS = [
   { value: 'walrus', label: 'Walrus' },
 ]
 
+const DEFAULT_BET = 25
+const BET_PRESET_AMOUNTS = [10, 25, 50, 100, 250]
+
+const currencyFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+})
+
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 let nextCardId = 0
@@ -74,7 +84,14 @@ function createPlayers(extraPlayers) {
   ]
 }
 
-function newRoundState(extraPlayers, existingShoe = []) {
+function newRoundState(
+  extraPlayers,
+  existingShoe = [],
+  roundSummary = '',
+  record = { wins: 0, losses: 0, pushes: 0 },
+  money = { net: 0, lastChange: 0 },
+  activeBet = DEFAULT_BET,
+) {
   const shoe = existingShoe.length < 52 ? createShoe() : [...existingShoe]
 
   return {
@@ -90,7 +107,10 @@ function newRoundState(extraPlayers, existingShoe = []) {
     activePlayerIndex: 0,
     message: 'Press Deal to begin.',
     dealTick: 0,
-    roundSummary: '',
+    roundSummary,
+    record,
+    money,
+    activeBet,
   }
 }
 
@@ -222,6 +242,18 @@ function sanitizeTheme(value) {
   return THEME_OPTIONS.some((option) => option.value === value) ? value : 'minimal'
 }
 
+function formatMoney(amount) {
+  return currencyFormatter.format(amount)
+}
+
+function formatSignedMoney(amount) {
+  if (amount === 0) {
+    return formatMoney(0)
+  }
+
+  return `${amount > 0 ? '+' : '-'}${formatMoney(Math.abs(amount))}`
+}
+
 function App() {
   const [menuOpen, setMenuOpen] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -232,6 +264,7 @@ function App() {
   })
   const [settingsDraft, setSettingsDraft] = useState(settings)
   const [isBusy, setIsBusy] = useState(false)
+  const [selectedBet, setSelectedBet] = useState(DEFAULT_BET)
   const [game, setGame] = useState(() => newRoundState(2))
 
   const gameRef = useRef(game)
@@ -241,6 +274,10 @@ function App() {
   const dealerTurnRef = useRef(false)
   const runBotTurnRef = useRef(null)
   const runDealerTurnRef = useRef(null)
+  const startRoundRef = useRef(null)
+  const hitRef = useRef(null)
+  const standRef = useRef(null)
+  const doubleRef = useRef(null)
 
   useEffect(() => {
     gameRef.current = game
@@ -264,7 +301,16 @@ function App() {
   }
 
   const resetTable = (extraPlayers) => {
-    updateGame((previous) => newRoundState(extraPlayers, previous.shoe))
+    updateGame((previous) =>
+      newRoundState(
+        extraPlayers,
+        previous.shoe,
+        previous.roundSummary,
+        previous.record,
+        previous.money,
+        previous.activeBet,
+      ),
+    )
   }
 
   const dealCardTo = async (targetId, isDealer = false, hidden = false) => {
@@ -274,7 +320,14 @@ function App() {
 
       if (!drawn) {
         return {
-          ...newRoundState(settingsRef.current.extraPlayers),
+          ...newRoundState(
+            settingsRef.current.extraPlayers,
+            [],
+            previous.roundSummary,
+            previous.record,
+            previous.money,
+            previous.activeBet,
+          ),
           message: 'Shuffling a fresh shoe...',
         }
       }
@@ -357,12 +410,33 @@ function App() {
         ...player,
         result: getRoundOutcome(player, previous.dealer.cards),
       }))
+      const you = resolvedPlayers.find((player) => player.id === 'you')
+      const nextRecord = { ...previous.record }
+      const stake = previous.activeBet * (you?.doubled ? 2 : 1)
+      let roundNet = 0
+
+      if (you) {
+        if (you.result === 'Win' || you.result === 'Blackjack!') {
+          nextRecord.wins += 1
+          roundNet = you.result === 'Blackjack!' ? stake * 1.5 : stake
+        } else if (you.result === 'Lose' || you.result === 'Bust') {
+          nextRecord.losses += 1
+          roundNet = -stake
+        } else {
+          nextRecord.pushes += 1
+        }
+      }
 
       return {
         ...previous,
         phase: 'finished',
         players: resolvedPlayers,
         roundSummary: buildSummary(resolvedPlayers),
+        record: nextRecord,
+        money: {
+          net: previous.money.net + roundNet,
+          lastChange: roundNet,
+        },
         message: 'Round complete.',
       }
     })
@@ -491,7 +565,14 @@ function App() {
     const nextPlayers = createPlayers(settingsRef.current.extraPlayers)
 
     updateGame((previous) => ({
-      ...newRoundState(settingsRef.current.extraPlayers, previous.shoe),
+      ...newRoundState(
+        settingsRef.current.extraPlayers,
+        previous.shoe,
+        previous.roundSummary,
+        previous.record,
+        previous.money,
+        selectedBet,
+      ),
       players: nextPlayers,
       phase: 'dealing',
       message: 'Dealing cards...',
@@ -670,8 +751,68 @@ function App() {
   }
 
   useEffect(() => {
+    const handleKeydown = (event) => {
+      if (menuOpen || settingsOpen) {
+        return
+      }
+
+      const target = event.target
+      if (target instanceof HTMLElement) {
+        const isEditable =
+          target.isContentEditable ||
+          target.closest('input, select, textarea, button, [contenteditable="true"]')
+        if (isEditable) {
+          return
+        }
+      }
+
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault()
+        void hitRef.current?.()
+        return
+      }
+
+      if (event.code === 'Space') {
+        event.preventDefault()
+        if (gameRef.current.phase === 'finished' && !busyRef.current) {
+          void startRoundRef.current?.()
+        } else {
+          void hitRef.current?.()
+        }
+        return
+      }
+
+      if (event.key === 'ArrowUp') {
+        event.preventDefault()
+        standRef.current?.()
+        return
+      }
+
+      if (event.key === 'ArrowDown') {
+        event.preventDefault()
+        void doubleRef.current?.()
+        return
+      }
+
+      if (event.key === 'ArrowRight') {
+        if (gameRef.current.phase === 'finished' && !busyRef.current) {
+          event.preventDefault()
+          void startRoundRef.current?.()
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeydown)
+    return () => window.removeEventListener('keydown', handleKeydown)
+  }, [menuOpen, settingsOpen])
+
+  useEffect(() => {
     runBotTurnRef.current = runBotTurn
     runDealerTurnRef.current = runDealerTurn
+    startRoundRef.current = startRound
+    hitRef.current = handleHit
+    standRef.current = handleStand
+    doubleRef.current = handleDouble
   })
 
   useEffect(() => {
@@ -696,9 +837,11 @@ function App() {
 
   const dealerUpCard = getDealerUpCard(game.dealer.cards)
   const basicStrategyTip = getBasicStrategyAction(you.cards, dealerUpCard)
+  const totalDecisions = game.record.wins + game.record.losses + game.record.pushes
 
   const activePlayer = game.players[game.activePlayerIndex]
   const canAct = game.phase === 'playing' && activePlayer?.id === 'you' && !isBusy
+  const canEditBet = (game.phase === 'ready' || game.phase === 'finished') && !isBusy
 
   const botSeats = BOT_SEAT_LAYOUTS[settings.extraPlayers] || BOT_SEAT_LAYOUTS[4]
 
@@ -848,6 +991,44 @@ function App() {
             </div>
 
             <aside className="sidebar">
+              <section className="bet-panel">
+                <h3>Betting</h3>
+                <p className="bankroll-line">Bankroll: <strong>∞</strong></p>
+
+                <label htmlFor="bet-amount">Next hand wager</label>
+                <input
+                  id="bet-amount"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={selectedBet}
+                  disabled={!canEditBet}
+                  onChange={(event) => {
+                    const numeric = Number(event.target.value)
+                    const nextBet = Math.max(1, Number.isFinite(numeric) ? Math.floor(numeric) : DEFAULT_BET)
+                    setSelectedBet(nextBet)
+                  }}
+                />
+
+                <div className="bet-presets" role="group" aria-label="Preset bet amounts">
+                  {BET_PRESET_AMOUNTS.map((amount) => (
+                    <button
+                      key={amount}
+                      type="button"
+                      className={`soft ${selectedBet === amount ? 'is-selected' : ''}`}
+                      disabled={!canEditBet}
+                      onClick={() => setSelectedBet(amount)}
+                    >
+                      {formatMoney(amount)}
+                    </button>
+                  ))}
+                </div>
+
+                <p className="bet-lock-note">
+                  {canEditBet ? 'Bet locks in when you deal.' : 'Finish this hand to change your next bet.'}
+                </p>
+              </section>
+
               <section className="controls">
                 <button className="primary" disabled={!canAct} onClick={() => void handleHit()}>
                   Hit
@@ -881,12 +1062,16 @@ function App() {
                 </section>
               ) : null}
 
-              {game.phase === 'finished' ? (
-                <section className="summary-card">
-                  <h3>Round Summary</h3>
-                  <p>{game.roundSummary}</p>
-                </section>
-              ) : null}
+              <section className="summary-card">
+                <h3>Round Summary</h3>
+                <p>
+                  You: {game.record.wins}W / {game.record.losses}L / {game.record.pushes}P
+                </p>
+                <p>Hand Bet: {formatMoney(game.activeBet)}</p>
+                <p>Last Hand: {formatSignedMoney(game.money.lastChange)}</p>
+                <p>Total Net: {formatSignedMoney(game.money.net)}</p>
+                <p>{game.roundSummary || `Hands played: ${totalDecisions}`}</p>
+              </section>
             </aside>
           </main>
         </>

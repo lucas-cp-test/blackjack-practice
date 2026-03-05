@@ -570,6 +570,7 @@
 }
 
 .controls,
+.bet-panel,
 .cheat-sheet,
 .summary-card {
   background: var(--panel-bg);
@@ -581,6 +582,62 @@
 .controls {
   display: grid;
   gap: 0.55rem;
+}
+
+.bet-panel h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.bet-panel p {
+  margin: 0.35rem 0;
+}
+
+.bankroll-line {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.bet-panel label {
+  display: block;
+  margin-top: 0.55rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.bet-panel input[type='number'] {
+  width: 100%;
+  margin-top: 0.35rem;
+  border-radius: 10px;
+  border: 2px solid var(--panel-border);
+  background: var(--panel-bg);
+  color: var(--text-main);
+  padding: 0.55rem 0.7rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.bet-presets {
+  margin-top: 0.6rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.bet-presets button {
+  padding: 0.45rem 0.35rem;
+  font-size: 0.84rem;
+}
+
+.bet-presets button.is-selected {
+  outline: 2px solid var(--active-outline);
+  box-shadow: 0 0 0 3px var(--active-glow);
+}
+
+.bet-lock-note {
+  margin-top: 0.55rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }
 
 button,
