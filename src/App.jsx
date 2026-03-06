@@ -1356,13 +1356,14 @@ function App() {
                           >
                             Double
                           </button>
-                          <button
-                            className="primary"
-                            disabled={!canSplit}
-                            onClick={() => void handleSplit()}
-                          >
-                            Split
-                          </button>
+                          {canSplit && (
+                            <button
+                              className="primary"
+                              onClick={() => void handleSplit()}
+                            >
+                              Split
+                            </button>
+                          )}
                           <button
                             className="soft"
                             onClick={() => void startRound()}
@@ -1567,13 +1568,14 @@ function App() {
                     >
                       Double
                     </button>
-                    <button
-                      className="primary"
-                      disabled={!canSplit}
-                      onClick={() => void handleSplit()}
-                    >
-                      Split
-                    </button>
+                    {canSplit && (
+                      <button
+                        className="primary"
+                        onClick={() => void handleSplit()}
+                      >
+                        Split
+                      </button>
+                    )}
                     <button className="soft" onClick={() => void startRound()} disabled={game.phase === 'dealing'}>
                       {game.phase === 'finished' ? 'Next Round' : 'Redeal'}
                     </button>
