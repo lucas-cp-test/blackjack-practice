@@ -471,10 +471,22 @@
   transform: translateX(-50%);
 }
 
-.seat.you {
+.you-hands-row {
+  position: absolute;
   bottom: 1rem;
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+  z-index: 2;
+}
+
+.you-hands-row .seat.you {
+  position: static;
+  transform: none;
+  bottom: auto;
+  left: auto;
 }
 
 .spacebar-pill {
@@ -929,8 +941,13 @@ select {
     top: 0.35rem;
   }
 
-  .seat.you {
+  .you-hands-row {
     bottom: 0.35rem;
+    gap: 0.25rem;
+  }
+
+  .you-hands-row .seat.you {
+    width: min(180px, 52vw);
   }
 
   .seat-header {
