@@ -177,11 +177,26 @@ function isBlackjack(cards) {
   return cards.length === 2 && handValue(cards).total === 21
 }
 
+function isYouHand(id) {
+  return id === 'you' || id.startsWith('you-')
+}
+
+function getSplitRecommendation(rank, dealerValue) {
+  if (rank === 'A' || rank === '8') return true
+  if (rank === '5' || rank === '10' || rank === 'J' || rank === 'Q' || rank === 'K') return false
+  if (rank === '4') return dealerValue >= 5 && dealerValue <= 6
+  if (rank === '2' || rank === '3') return dealerValue >= 2 && dealerValue <= 7
+  if (rank === '6') return dealerValue >= 2 && dealerValue <= 6
+  if (rank === '7') return dealerValue >= 2 && dealerValue <= 7
+  if (rank === '9') return (dealerValue >= 2 && dealerValue <= 6) || (dealerValue >= 8 && dealerValue <= 9)
+  return false
+}
+
 function getDealerUpCard(dealerCards) {
   return dealerCards.find((card) => !card.hidden) ?? null
 }
 
-function getBasicStrategyAction(playerCards, dealerUpCard) {
+function getBasicStrategyAction(playerCards, dealerUpCard, canSplit = false) {
   if (!dealerUpCard || playerCards.length === 0) {
     return 'Deal cards to get a recommendation.'
   }
@@ -189,6 +204,12 @@ function getBasicStrategyAction(playerCards, dealerUpCard) {
   const { total, soft } = handValue(playerCards)
   const dealerValue = dealerUpCard.rank === 'A' ? 11 : dealerUpCard.value
   const canDouble = playerCards.length === 2
+
+  if (canSplit && playerCards.length === 2 && playerCards[0].rank === playerCards[1].rank) {
+    if (getSplitRecommendation(playerCards[0].rank, dealerValue)) {
+      return 'Split'
+    }
+  }
 
   const canUseDouble = (fallback = 'Hit') => (canDouble ? 'Double' : `${fallback} (Double if allowed)`)
 
@@ -240,6 +261,10 @@ function getBasicStrategyAction(playerCards, dealerUpCard) {
 }
 
 function getActionFromStrategyTip(tip) {
+  if (tip === 'Split') {
+    return 'split'
+  }
+
   if (tip.startsWith('Double')) {
     return 'double'
   }
@@ -335,6 +360,7 @@ function App() {
   const hitRef = useRef(null)
   const standRef = useRef(null)
   const doubleRef = useRef(null)
+  const splitRef = useRef(null)
 
   useEffect(() => {
     gameRef.current = game
@@ -491,18 +517,18 @@ function App() {
         ...player,
         result: getRoundOutcome(player, previous.dealer.cards),
       }))
-      const you = resolvedPlayers.find((player) => player.id === 'you')
+      const youHands = resolvedPlayers.filter((player) => isYouHand(player.id))
       const nextRecord = { ...previous.record }
-      const stake = previous.activeBet * (you?.doubled ? 2 : 1)
       let roundNet = 0
 
-      if (you) {
-        if (you.result === 'Win' || you.result === 'Blackjack!') {
+      for (const hand of youHands) {
+        const stake = previous.activeBet * (hand.doubled ? 2 : 1)
+        if (hand.result === 'Win' || hand.result === 'Blackjack!') {
           nextRecord.wins += 1
-          roundNet = you.result === 'Blackjack!' ? stake * 1.5 : stake
-        } else if (you.result === 'Lose' || you.result === 'Bust') {
+          roundNet += hand.result === 'Blackjack!' ? stake * 1.5 : stake
+        } else if (hand.result === 'Lose' || hand.result === 'Bust') {
           nextRecord.losses += 1
-          roundNet = -stake
+          roundNet -= stake
         } else {
           nextRecord.pushes += 1
         }
@@ -716,20 +742,21 @@ function App() {
     const snapshot = gameRef.current
     const activePlayer = snapshot.players[snapshot.activePlayerIndex]
 
-    if (snapshot.phase !== 'playing' || !activePlayer || activePlayer.id !== 'you' || busyRef.current) {
+    if (snapshot.phase !== 'playing' || !activePlayer || !isYouHand(activePlayer.id) || busyRef.current) {
       return
     }
 
     setBusy(true)
+    const activeId = activePlayer.id
 
-    await dealCardTo('you')
+    await dealCardTo(activeId)
 
     const latest = gameRef.current
-    const you = latest.players.find((player) => player.id === 'you')
+    const you = latest.players.find((player) => player.id === activeId)
     const total = handValue(you.cards).total
 
     if (total > 21) {
-      setPlayerStatus('you', 'bust')
+      setPlayerStatus(activeId, 'bust')
       updateGame((previous) => ({
         ...previous,
         message: `You bust with ${total}.`,
@@ -740,7 +767,7 @@ function App() {
     }
 
     if (total === 21) {
-      setPlayerStatus('you', 'stand')
+      setPlayerStatus(activeId, 'stand')
       updateGame((previous) => ({
         ...previous,
         message: '21. Standing automatically.',
@@ -761,11 +788,11 @@ function App() {
     const snapshot = gameRef.current
     const activePlayer = snapshot.players[snapshot.activePlayerIndex]
 
-    if (snapshot.phase !== 'playing' || !activePlayer || activePlayer.id !== 'you' || busyRef.current) {
+    if (snapshot.phase !== 'playing' || !activePlayer || !isYouHand(activePlayer.id) || busyRef.current) {
       return
     }
 
-    setPlayerStatus('you', 'stand')
+    setPlayerStatus(activePlayer.id, 'stand')
     updateGame((previous) => ({
       ...previous,
       message: 'You stand.',
@@ -781,7 +808,7 @@ function App() {
     if (
       snapshot.phase !== 'playing' ||
       !activePlayer ||
-      activePlayer.id !== 'you' ||
+      !isYouHand(activePlayer.id) ||
       activePlayer.cards.length !== 2 ||
       busyRef.current
     ) {
@@ -789,22 +816,23 @@ function App() {
     }
 
     setBusy(true)
+    const activeId = activePlayer.id
 
     updateGame((previous) => ({
       ...previous,
       players: previous.players.map((player) =>
-        player.id === 'you' ? { ...player, doubled: true } : player,
+        player.id === activeId ? { ...player, doubled: true } : player,
       ),
       message: 'Double down: one final card.',
     }))
 
-    await dealCardTo('you')
+    await dealCardTo(activeId)
 
     const latest = gameRef.current
-    const you = latest.players.find((player) => player.id === 'you')
+    const you = latest.players.find((player) => player.id === activeId)
     const total = handValue(you.cards).total
 
-    setPlayerStatus('you', total > 21 ? 'bust' : 'stand')
+    setPlayerStatus(activeId, total > 21 ? 'bust' : 'stand')
     updateGame((previous) => ({
       ...previous,
       message: total > 21 ? `You bust with ${total}.` : `You stand on ${total}.`,
@@ -812,6 +840,83 @@ function App() {
 
     setBusy(false)
     advanceTurn()
+  }
+
+  const handleSplit = async () => {
+    const snapshot = gameRef.current
+    const activePlayer = snapshot.players[snapshot.activePlayerIndex]
+    const activeIndex = snapshot.activePlayerIndex
+
+    if (
+      snapshot.phase !== 'playing' ||
+      !activePlayer ||
+      !isYouHand(activePlayer.id) ||
+      activePlayer.cards.length !== 2 ||
+      activePlayer.cards[0].rank !== activePlayer.cards[1].rank ||
+      busyRef.current
+    ) {
+      return
+    }
+
+    const splitCount = snapshot.players.filter((p) => isYouHand(p.id)).length - 1
+    if (splitCount >= 3) {
+      return
+    }
+
+    setBusy(true)
+
+    const activeId = activePlayer.id
+    const splitId = `you-${splitCount + 1}`
+    const splitCard = activePlayer.cards[1]
+    const isPairOfAces = splitCard.rank === 'A'
+
+    updateGame((previous) => {
+      const updatedPlayers = previous.players.map((player) =>
+        player.id === activeId ? { ...player, cards: [player.cards[0]] } : player,
+      )
+      const splitHand = {
+        id: splitId,
+        name: 'Split Hand',
+        type: 'human',
+        cards: [splitCard],
+        status: 'playing',
+        doubled: false,
+        result: '',
+      }
+      return {
+        ...previous,
+        players: [
+          ...updatedPlayers.slice(0, activeIndex + 1),
+          splitHand,
+          ...updatedPlayers.slice(activeIndex + 1),
+        ],
+        message: 'Split! Dealing new cards to each hand...',
+      }
+    })
+
+    await dealCardTo(activeId)
+    await dealCardTo(splitId)
+
+    if (isPairOfAces) {
+      setPlayerStatus(activeId, 'stand')
+      updateGame((previous) => ({ ...previous, message: 'Split aces: one card each. Standing.' }))
+      setBusy(false)
+      advanceTurn()
+      return
+    }
+
+    const latest = gameRef.current
+    const currentHand = latest.players.find((p) => p.id === activeId)
+    if (currentHand && handValue(currentHand.cards).total === 21) {
+      setPlayerStatus(activeId, 'stand')
+      updateGame((previous) => ({ ...previous, message: '21. Standing automatically.' }))
+      setBusy(false)
+      advanceTurn()
+      return
+    }
+
+    updateGame((previous) => ({ ...previous, message: 'Split complete. Your move.' }))
+    setBusy(false)
   }
 
   const applySettings = async () => {
@@ -884,12 +989,26 @@ function App() {
         }
 
         const actingPlayer = snapshot.players[snapshot.activePlayerIndex]
-        if (!actingPlayer || actingPlayer.id !== 'you') {
+        if (!actingPlayer || !isYouHand(actingPlayer.id)) {
           return
         }
 
-        const tip = getBasicStrategyAction(actingPlayer.cards, getDealerUpCard(snapshot.dealer.cards))
+        const splitCountForTip = snapshot.players.filter((p) => isYouHand(p.id)).length - 1
+        const canSplitForTip =
+          actingPlayer.cards.length === 2 &&
+          actingPlayer.cards[0].rank === actingPlayer.cards[1].rank &&
+          splitCountForTip < 3
+        const tip = getBasicStrategyAction(
+          actingPlayer.cards,
+          getDealerUpCard(snapshot.dealer.cards),
+          canSplitForTip,
+        )
         const action = getActionFromStrategyTip(tip)
+
+        if (action === 'split') {
+          void splitRef.current?.()
+          return
+        }
 
         if (action === 'double') {
           void doubleRef.current?.()
@@ -936,6 +1055,7 @@ function App() {
     hitRef.current = handleHit
     standRef.current = handleStand
     doubleRef.current = handleDouble
+    splitRef.current = handleSplit
   })
 
   useEffect(() => {
@@ -953,16 +1073,27 @@ function App() {
     }
   }, [game.phase, game.activePlayerIndex, game.players])
 
-  const you = useMemo(
-    () => game.players.find((player) => player.id === 'you') ?? createPlayers(0)[0],
-    [game.players],
-  )
+  const you = useMemo(() => {
+    const activeP = game.players[game.activePlayerIndex]
+    if (game.phase === 'playing' && activeP && isYouHand(activeP.id)) {
+      return activeP
+    }
+    return game.players.find((player) => player.id === 'you') ?? createPlayers(0)[0]
+  }, [game.players, game.phase, game.activePlayerIndex])
 
   const dealerUpCard = getDealerUpCard(game.dealer.cards)
-  const basicStrategyTip = getBasicStrategyAction(you.cards, dealerUpCard)
 
   const activePlayer = game.players[game.activePlayerIndex]
-  const canAct = game.phase === 'playing' && activePlayer?.id === 'you' && !isBusy
+  const canAct = game.phase === 'playing' && activePlayer && isYouHand(activePlayer.id) && !isBusy
+  const splitCount = game.players.filter((p) => isYouHand(p.id)).length - 1
+  const canSplit =
+    canAct &&
+    you.cards.length === 2 &&
+    you.cards[0].rank === you.cards[1].rank &&
+    splitCount < 3
+
+  const basicStrategyTip = getBasicStrategyAction(you.cards, dealerUpCard, canSplit)
+
   const canEditBet = (game.phase === 'ready' || game.phase === 'finished') && !isBusy
   const totalCardsInShoe = game.shoe.length + game.discard.length
   const dealtPercent = totalCardsInShoe > 0 ? (game.discard.length / totalCardsInShoe) * 100 : 0
@@ -975,8 +1106,11 @@ function App() {
       return 'Next Round'
     }
 
-    if (game.phase === 'playing' && activePlayer?.id === 'you' && !isBusy) {
+    if (game.phase === 'playing' && activePlayer && isYouHand(activePlayer.id) && !isBusy) {
       const action = getActionFromStrategyTip(basicStrategyTip)
+      if (action === 'split') {
+        return 'Split'
+      }
       if (action === 'double') {
         return 'Double'
       }
@@ -1133,29 +1267,40 @@ function App() {
                   )
                 })}
 
-              <section className={`seat you ${activePlayer?.id === 'you' ? 'active' : ''}`}>
-                <p className="spacebar-pill">Spacebar: {spacebarActionLabel}</p>
-                <div className="seat-header">
-                  <h2>You</h2>
-                  <span>{handValue(you.cards).total || '-'}</span>
-                </div>
-                <div className="hand">
-                  {you.cards.map((card) => (
-                    <article
-                      key={card.id}
-                      className={`playing-card ${card.suit === '♥' || card.suit === '♦' ? 'red' : ''}`}
-                      style={{ '--deal-order': card.dealtAt }}
-                    >
-                      <span>{card.rank}</span>
-                      <span>{card.suit}</span>
-                    </article>
-                  ))}
-                </div>
-                <div className="seat-footer">
-                  {you.doubled ? <p className="result-chip">Doubled</p> : null}
-                  {game.phase === 'finished' ? <p className="result-chip">{you.result}</p> : null}
-                </div>
-              </section>
+              <div className="you-hands-row">
+                {game.players.filter((player) => isYouHand(player.id)).map((hand, handIndex) => {
+                  const handTotal = handValue(hand.cards).total
+                  const isHandActive = activePlayer?.id === hand.id && game.phase === 'playing'
+                  const youHandCount = game.players.filter((p) => isYouHand(p.id)).length
+                  return (
+                    <section key={hand.id} className={`seat you ${isHandActive ? 'active' : ''}`}>
+                      {handIndex === 0 ? (
+                        <p className="spacebar-pill">Spacebar: {spacebarActionLabel}</p>
+                      ) : null}
+                      <div className="seat-header">
+                        <h2>{youHandCount > 1 ? `Hand ${handIndex + 1}` : 'You'}</h2>
+                        <span>{handTotal || '-'}</span>
+                      </div>
+                      <div className="hand">
+                        {hand.cards.map((card) => (
+                          <article
+                            key={card.id}
+                            className={`playing-card ${card.suit === '♥' || card.suit === '♦' ? 'red' : ''}`}
+                            style={{ '--deal-order': card.dealtAt }}
+                          >
+                            <span>{card.rank}</span>
+                            <span>{card.suit}</span>
+                          </article>
+                        ))}
+                      </div>
+                      <div className="seat-footer">
+                        {hand.doubled ? <p className="result-chip">Doubled</p> : null}
+                        {game.phase === 'finished' ? <p className="result-chip">{hand.result}</p> : null}
+                      </div>
+                    </section>
+                  )
+                })}
+              </div>
             </div>
 
             <aside className={`sidebar ${isMobileLayout ? 'mobile-sidebar' : ''}`}>
@@ -1211,6 +1356,14 @@ function App() {
                           >
                             Double
                           </button>
+                          {canSplit && (
+                            <button
+                              className="primary"
+                              onClick={() => void handleSplit()}
+                            >
+                              Split
+                            </button>
+                          )}
                           <button
                             className="soft"
                             onClick={() => void startRound()}
@@ -1415,6 +1568,14 @@ function App() {
                     >
                       Double
                     </button>
+                    {canSplit && (
+                      <button
+                        className="primary"
+                        onClick={() => void handleSplit()}
+                      >
+                        Split
+                      </button>
+                    )}
                     <button className="soft" onClick={() => void startRound()} disabled={game.phase === 'dealing'}>
                       {game.phase === 'finished' ? 'Next Round' : 'Redeal'}
                     </button>
