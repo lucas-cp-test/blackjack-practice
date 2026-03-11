@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
+import {
+  getBasicStrategyAdvice,
+  getBasicStrategyAction,
+  getDealerUpCard,
+  handValue,
+  isBlackjack,
+} from './basicStrategy'
 
 const SUITS = ['♠', '♥', '♦', '♣']
 const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
@@ -23,7 +30,7 @@ const THEME_OPTIONS = [
 
 const DEFAULT_BET = 10
 const BET_PRESET_AMOUNTS = [10, 25, 50, 100, 250]
-const DECK_COUNT = 4
+const DECK_COUNT = 6
 const MIN_CUT_CARD_REMAINING = 52
 const MAX_CUT_CARD_REMAINING = 78
 
@@ -151,113 +158,8 @@ function newRoundState(
   }
 }
 
-function handValue(cards) {
-  let total = 0
-  let aceCount = 0
-
-  for (const card of cards) {
-    total += card.value
-    if (card.rank === 'A') {
-      aceCount += 1
-    }
-  }
-
-  while (total > 21 && aceCount > 0) {
-    total -= 10
-    aceCount -= 1
-  }
-
-  return {
-    total,
-    soft: aceCount > 0,
-  }
-}
-
-function isBlackjack(cards) {
-  return cards.length === 2 && handValue(cards).total === 21
-}
-
 function isYouHand(id) {
   return id === 'you' || id.startsWith('you-')
-}
-
-function getSplitRecommendation(rank, dealerValue) {
-  if (rank === 'A' || rank === '8') return true
-  if (rank === '5' || rank === '10' || rank === 'J' || rank === 'Q' || rank === 'K') return false
-  if (rank === '4') return dealerValue >= 5 && dealerValue <= 6
-  if (rank === '2' || rank === '3') return dealerValue >= 2 && dealerValue <= 7
-  if (rank === '6') return dealerValue >= 2 && dealerValue <= 6
-  if (rank === '7') return dealerValue >= 2 && dealerValue <= 7
-  if (rank === '9') return (dealerValue >= 2 && dealerValue <= 6) || (dealerValue >= 8 && dealerValue <= 9)
-  return false
-}
-
-function getDealerUpCard(dealerCards) {
-  return dealerCards.find((card) => !card.hidden) ?? null
-}
-
-function getBasicStrategyAction(playerCards, dealerUpCard, canSplit = false) {
-  if (!dealerUpCard || playerCards.length === 0) {
-    return 'Deal cards to get a recommendation.'
-  }
-
-  const { total, soft } = handValue(playerCards)
-  const dealerValue = dealerUpCard.rank === 'A' ? 11 : dealerUpCard.value
-  const canDouble = playerCards.length === 2
-
-  if (canSplit && playerCards.length === 2 && playerCards[0].rank === playerCards[1].rank) {
-    if (getSplitRecommendation(playerCards[0].rank, dealerValue)) {
-      return 'Split'
-    }
-  }
-
-  const canUseDouble = (fallback = 'Hit') => (canDouble ? 'Double' : `${fallback} (Double if allowed)`)
-
-  if (soft) {
-    if (total <= 17) {
-      if (total <= 14) {
-        return dealerValue >= 5 && dealerValue <= 6 ? canUseDouble() : 'Hit'
-      }
-      if (total <= 16) {
-        return dealerValue >= 4 && dealerValue <= 6 ? canUseDouble() : 'Hit'
-      }
-
-      return dealerValue >= 3 && dealerValue <= 6 ? canUseDouble() : 'Hit'
-    }
-
-    if (total === 18) {
-      if (dealerValue >= 3 && dealerValue <= 6) {
-        return canUseDouble('Stand')
-      }
-      if ([2, 7, 8].includes(dealerValue)) {
-        return 'Stand'
-      }
-      return 'Hit'
-    }
-
-    return 'Stand'
-  }
-
-  if (total <= 8) {
-    return 'Hit'
-  }
-  if (total === 9) {
-    return dealerValue >= 3 && dealerValue <= 6 ? canUseDouble() : 'Hit'
-  }
-  if (total === 10) {
-    return dealerValue >= 2 && dealerValue <= 9 ? canUseDouble() : 'Hit'
-  }
-  if (total === 11) {
-    return dealerValue <= 10 ? canUseDouble() : 'Hit'
-  }
-  if (total === 12) {
-    return dealerValue >= 4 && dealerValue <= 6 ? 'Stand' : 'Hit'
-  }
-  if (total >= 13 && total <= 16) {
-    return dealerValue <= 6 ? 'Stand' : 'Hit'
-  }
-
-  return 'Stand'
 }
 
 function getActionFromStrategyTip(tip) {
@@ -1092,7 +994,8 @@ function App() {
     you.cards[0].rank === you.cards[1].rank &&
     splitCount < 3
 
-  const basicStrategyTip = getBasicStrategyAction(you.cards, dealerUpCard, canSplit)
+  const basicStrategyAdvice = getBasicStrategyAdvice(you.cards, dealerUpCard, canSplit)
+  const basicStrategyTip = basicStrategyAdvice.action
 
   const canEditBet = (game.phase === 'ready' || game.phase === 'finished') && !isBusy
   const totalCardsInShoe = game.shoe.length + game.discard.length
@@ -1374,6 +1277,9 @@ function App() {
                           <p className="mobile-play-tip">
                             Best Move: <strong>{basicStrategyTip}</strong>
                           </p>
+                          <p className="mobile-play-why">
+                            Why: {basicStrategyAdvice.reason}
+                          </p>
                         </section>
 
                         <section className="summary-card mobile-summary-card">
@@ -1589,7 +1495,13 @@ function App() {
                         <strong>{dealerUpCard ? `${dealerUpCard.rank}${dealerUpCard.suit}` : '-'}</strong>
                       </p>
                       <p>
+                        Your Hand: <strong>{basicStrategyAdvice.handLabel}</strong>
+                      </p>
+                      <p>
                         Your Best Move: <strong>{basicStrategyTip}</strong>
+                      </p>
+                      <p className="strategy-reason">
+                        Why: {basicStrategyAdvice.reason}
                       </p>
                       <small>Static chart advice. No card counting adjustments.</small>
                     </section>

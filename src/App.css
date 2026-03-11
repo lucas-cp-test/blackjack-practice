@@ -59,6 +59,32 @@
   font-family: var(--font-main);
 }
 
+@media (min-width: 781px) {
+  .app-shell {
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .table-area {
+    flex: 1;
+    min-height: 0;
+    align-items: stretch;
+  }
+
+  .felt {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .sidebar {
+    min-height: 0;
+    overflow: auto;
+    padding-right: 0.15rem;
+  }
+}
+
 .app-shell.theme-minimal {
   --font-main: 'Avenir Next', 'Segoe UI', sans-serif;
   --font-display: 'Avenir Next', 'Segoe UI', sans-serif;
@@ -793,6 +819,16 @@ select {
   margin: 0.4rem 0;
 }
 
+.strategy-reason,
+.mobile-play-why {
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.strategy-reason {
+  font-size: 0.88rem;
+}
+
 .settings-card input[type='range'] {
   width: 100%;
 }
@@ -1042,6 +1078,12 @@ select {
     margin: 0.1rem 0 0;
     font-size: 0.8rem;
     color: var(--text-muted);
+  }
+
+  .mobile-play-why {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: 0.78rem;
   }
 
   .mobile-shoe-visual {

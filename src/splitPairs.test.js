@@ -1,35 +1,10 @@
 import { describe, it, expect } from 'vitest'
+import { getBasicStrategyAdvice, getSplitRecommendation, handValue } from './basicStrategy'
 
 // ─── Pure helpers replicated from App.jsx for isolated unit testing ───────────
 
 function isYouHand(id) {
   return id === 'you' || id.startsWith('you-')
-}
-
-function getSplitRecommendation(rank, dealerValue) {
-  if (rank === 'A' || rank === '8') return true
-  if (rank === '5' || rank === '10' || rank === 'J' || rank === 'Q' || rank === 'K') return false
-  if (rank === '4') return dealerValue >= 5 && dealerValue <= 6
-  if (rank === '2' || rank === '3') return dealerValue >= 2 && dealerValue <= 7
-  if (rank === '6') return dealerValue >= 2 && dealerValue <= 6
-  if (rank === '7') return dealerValue >= 2 && dealerValue <= 7
-  if (rank === '9')
-    return (dealerValue >= 2 && dealerValue <= 6) || (dealerValue >= 8 && dealerValue <= 9)
-  return false
-}
-
-function handValue(cards) {
-  let total = 0
-  let aceCount = 0
-  for (const card of cards) {
-    total += card.value
-    if (card.rank === 'A') aceCount += 1
-  }
-  while (total > 21 && aceCount > 0) {
-    total -= 10
-    aceCount -= 1
-  }
-  return { total, soft: aceCount > 0 }
 }
 
 function makeCard(rank, suit = '♠') {
@@ -42,6 +17,10 @@ function makeCard(rank, suit = '♠') {
 
 function makePlayer(id, cards = []) {
   return { id, name: id, type: isYouHand(id) ? 'human' : 'bot', cards, status: 'playing', doubled: false, result: '' }
+}
+
+function makeDealerUpCard(rank, suit = '♣') {
+  return { ...makeCard(rank, suit), hidden: false }
 }
 
 // ─── canSplit conditions ───────────────────────────────────────────────────────
@@ -121,6 +100,61 @@ describe('getSplitRecommendation', () => {
     expect(getSplitRecommendation('9', 9)).toBe(true)
     expect(getSplitRecommendation('9', 10)).toBe(false)
     expect(getSplitRecommendation('9', 11)).toBe(false)
+  })
+})
+
+describe('getBasicStrategyAdvice', () => {
+  it('explains why splitting 8s is best', () => {
+    const advice = getBasicStrategyAdvice(
+      [makeCard('8'), makeCard('8')],
+      makeDealerUpCard('10'),
+      true,
+    )
+
+    expect(advice.action).toBe('Split')
+    expect(advice.handLabel).toContain('Pair of 8s')
+    expect(advice.reason).toContain('hard 16')
+  })
+
+  it('explains hard 12 standing against a weak dealer', () => {
+    const advice = getBasicStrategyAdvice(
+      [makeCard('10'), makeCard('2')],
+      makeDealerUpCard('4'),
+    )
+
+    expect(advice.action).toBe('Stand')
+    expect(advice.reason).toContain('more likely to bust')
+  })
+
+  it('explains why soft 18 hits against a strong dealer', () => {
+    const advice = getBasicStrategyAdvice(
+      [makeCard('A'), makeCard('7')],
+      makeDealerUpCard('9'),
+    )
+
+    expect(advice.action).toBe('Hit')
+    expect(advice.reason).toContain('too strong to sit on soft 18')
+  })
+
+  it('explains double fallback when doubling is unavailable', () => {
+    const advice = getBasicStrategyAdvice(
+      [makeCard('5'), makeCard('3'), makeCard('3')],
+      makeDealerUpCard('6'),
+    )
+
+    expect(advice.action).toBe('Hit (Double if allowed)')
+    expect(advice.reason).toContain('usually a double spot')
+  })
+
+  it('explains legal fallback when a recommended split is unavailable', () => {
+    const advice = getBasicStrategyAdvice(
+      [makeCard('8'), makeCard('8')],
+      makeDealerUpCard('6'),
+      false,
+    )
+
+    expect(advice.action).toBe('Stand')
+    expect(advice.reason).toContain('Splitting would normally be the chart play here')
   })
 })
 
