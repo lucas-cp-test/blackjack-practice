@@ -1035,6 +1035,7 @@ function App() {
           <div className="menu-card">
             <p className="eyebrow">Blackjack Practice</p>
             <h1>Table Setup</h1>
+            {/* Player count hidden: single-player only
             <label htmlFor="menu-extra-players">Players besides you and the dealer</label>
             <input
               id="menu-extra-players"
@@ -1050,6 +1051,7 @@ function App() {
               }
             />
             <p className="menu-count">{settingsDraft.extraPlayers} additional player(s)</p>
+            */}
             <button
               className="primary"
               onClick={async () => {
@@ -1362,6 +1364,7 @@ function App() {
                       <section className="settings-card">
                         <h3>Game Settings</h3>
 
+                        {/* Player count hidden: single-player only
                         <label htmlFor="mobile-settings-extra-players">
                           Players besides you and the dealer
                         </label>
@@ -1379,6 +1382,7 @@ function App() {
                           }
                         />
                         <p>{settingsDraft.extraPlayers} additional player(s)</p>
+                        */}
 
                         <label htmlFor="mobile-settings-theme">Theme</label>
                         <select
@@ -1528,6 +1532,7 @@ function App() {
           <section className="settings-modal" onClick={(event) => event.stopPropagation()}>
             <h2>Game Settings</h2>
 
+            {/* Player count hidden: single-player only
             <label htmlFor="settings-extra-players">Players besides you and the dealer</label>
             <input
               id="settings-extra-players"
@@ -1543,6 +1548,7 @@ function App() {
               }
             />
             <p>{settingsDraft.extraPlayers} additional player(s)</p>
+            */}
 
             <label htmlFor="settings-theme">Theme</label>
             <select
