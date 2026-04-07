@@ -6,13 +6,17 @@ export const gamePages = [
   },
 ]
 
-export function getRepoName(repository = process.env.GITHUB_REPOSITORY) {
+function getEnvValue(name) {
+  return globalThis.process?.env?.[name]
+}
+
+export function getRepoName(repository = getEnvValue('GITHUB_REPOSITORY')) {
   return repository?.split('/')[1] ?? ''
 }
 
 export function getBasePath({
-  githubActions = process.env.GITHUB_ACTIONS,
-  repository = process.env.GITHUB_REPOSITORY,
+  githubActions = getEnvValue('GITHUB_ACTIONS'),
+  repository = getEnvValue('GITHUB_REPOSITORY'),
 } = {}) {
   const repoName = getRepoName(repository)
   return githubActions === 'true' && repoName ? `/${repoName}/` : '/'
