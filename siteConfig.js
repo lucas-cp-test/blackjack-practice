@@ -4,6 +4,11 @@ export const gamePages = [
     title: 'Blackjack Practice',
     description: 'Train basic strategy and play quick blackjack hands.',
   },
+  {
+    slug: 'leaderboard',
+    title: 'Leaderboard',
+    description: 'Track scores and crown the top player.',
+  },
 ]
 
 function getEnvValue(name) {
