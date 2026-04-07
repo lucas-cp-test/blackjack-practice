@@ -20,6 +20,6 @@ describe('siteConfig', () => {
   })
 
   it('creates a nested page path for each game', () => {
-    expect(getGamePagePath(gamePages[0].slug)).toBe('./blackjack-practice/')
+    expect(getGamePagePath(gamePages[0].slug)).toBe(`./${gamePages[0].slug}/`)
   })
 })

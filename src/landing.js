@@ -8,10 +8,12 @@ if (gameList) {
       const item = document.createElement('li')
       const link = document.createElement('a')
       const title = document.createElement('strong')
+      const description = document.createElement('span')
 
       link.href = getGamePagePath(game.slug)
       title.textContent = game.title
-      link.append(title, game.description)
+      description.textContent = game.description
+      link.append(title, description)
       item.append(link)
 
       return item
