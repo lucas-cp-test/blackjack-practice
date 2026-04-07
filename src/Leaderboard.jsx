@@ -3,7 +3,7 @@ import './Leaderboard.css'
 import { parseGitHubRepo } from '../siteConfig.js'
 
 const INITIAL_PLAYERS = [
-  { name: 'Lucas', score: 7 },
+  { name: 'Lucas', score: 8 },
   { name: 'Logan', score: 13 },
   { name: 'Meg', score: 15 },
   { name: 'Tessa', score: 17 },
