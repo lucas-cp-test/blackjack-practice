@@ -1,12 +1,23 @@
 /* global process */
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { gamePages, getBasePath } from './siteConfig.js'
 
-const repoName = process.env.GITHUB_REPOSITORY?.split('/')[1]
-const basePath =
-  process.env.GITHUB_ACTIONS === 'true' && repoName ? `/${repoName}/` : '/'
+const htmlInputs = Object.fromEntries([
+  ['index', fileURLToPath(new URL('./index.html', import.meta.url))],
+  ...gamePages.map(({ slug }) => [
+    slug,
+    fileURLToPath(new URL(`./${slug}/index.html`, import.meta.url)),
+  ]),
+])
 
 export default defineConfig({
   plugins: [react()],
-  base: basePath,
+  base: getBasePath(),
+  build: {
+    rollupOptions: {
+      input: htmlInputs,
+    },
+  },
 })
