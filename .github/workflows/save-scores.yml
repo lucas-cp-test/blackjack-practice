@@ -1,0 +1,59 @@
+name: Save Leaderboard Scores
+
+on:
+  workflow_dispatch:
+    inputs:
+      scores:
+        description: 'JSON array of player scores, e.g. [{"name":"Lucas","score":8}]'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-scores:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update scores in Leaderboard.jsx
+        env:
+          SCORES: ${{ inputs.scores }}
+        run: |
+          node << 'NODEEOF'
+          const fs = require('fs');
+          const scores = JSON.parse(process.env.SCORES);
+          if (!Array.isArray(scores)) throw new Error('scores must be an array');
+          const playersStr = scores
+            .map(p => {
+              const name = String(p.name).replace(/'/g, "\\'");
+              const score = parseInt(p.score, 10);
+              if (!Number.isFinite(score)) throw new Error(`Invalid score for ${name}`);
+              return `  { name: '${name}', score: ${score} }`;
+            })
+            .join(',\n');
+          let content = fs.readFileSync('src/Leaderboard.jsx', 'utf8');
+          content = content.replace(
+            /const INITIAL_PLAYERS = \[[\s\S]*?\]/,
+            `const INITIAL_PLAYERS = [\n${playersStr},\n]`
+          );
+          fs.writeFileSync('src/Leaderboard.jsx', content);
+          NODEEOF
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: update-scores-${{ github.run_number }}
+          commit-message: 'chore: update leaderboard scores'
+          title: 'Update KubLeader scores'
+          body: |
+            Automated score update triggered from the KubLeader app.
+
+            New scores:
+            ```json
+            ${{ inputs.scores }}
+            ```
+          delete-branch: true
