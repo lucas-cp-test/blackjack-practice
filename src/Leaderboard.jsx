@@ -22,7 +22,7 @@ export default function Leaderboard() {
 
   return (
     <div className="lb-shell">
-      <h1 className="lb-title">Leaderboard</h1>
+      <h1 className="lb-title">KubLeader</h1>
 
       <ul className="lb-list">
         {sorted.map((player) => {

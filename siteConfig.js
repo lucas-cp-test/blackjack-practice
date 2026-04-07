@@ -5,8 +5,8 @@ export const gamePages = [
     description: 'Train basic strategy and play quick blackjack hands.',
   },
   {
-    slug: 'leaderboard',
-    title: 'Leaderboard',
+    slug: 'kub-leader',
+    title: 'KubLeader',
     description: 'Track scores and crown the top player.',
   },
 ]
