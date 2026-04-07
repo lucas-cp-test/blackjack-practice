@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { parseGitHubRepo } from '../siteConfig.js'
 
 // ─── Pure helpers mirroring Leaderboard.jsx logic ────────────────────────────
 
@@ -79,5 +80,33 @@ describe('incrementScore', () => {
     players = incrementScore(players, 'Logan')
     expect(getTopScore(players)).toBe(18)
     expect(players.find((p) => p.name === 'Logan').score).toBe(18)
+  })
+})
+
+// ─── save-scores helpers ──────────────────────────────────────────────────────
+
+describe('buildScoresPayload', () => {
+  it('serialises players to a compact JSON string', () => {
+    const players = [
+      { name: 'Lucas', score: 8 },
+      { name: 'Tessa', score: 17 },
+    ]
+    const payload = JSON.stringify(players.map(({ name, score }) => ({ name, score })))
+    expect(JSON.parse(payload)).toEqual([
+      { name: 'Lucas', score: 8 },
+      { name: 'Tessa', score: 17 },
+    ])
+  })
+})
+
+describe('parseGitHubRepo (from Leaderboard context)', () => {
+  it('returns owner/repo for a deployed GitHub Pages URL', () => {
+    expect(
+      parseGitHubRepo({ hostname: 'lucas-cp-test.github.io', pathname: '/blackjack-practice/kub-leader/' }),
+    ).toBe('lucas-cp-test/blackjack-practice')
+  })
+
+  it('returns null for a localhost dev URL', () => {
+    expect(parseGitHubRepo({ hostname: 'localhost', pathname: '/kub-leader/' })).toBeNull()
   })
 })

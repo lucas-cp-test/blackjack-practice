@@ -30,3 +30,19 @@ export function getBasePath({
 export function getGamePagePath(slug) {
   return `./${slug}/`
 }
+
+/**
+ * Derives "owner/repo" from a GitHub Pages location object.
+ * On GitHub Pages the hostname is `{owner}.github.io` and the first
+ * path segment is the repository name.
+ *
+ * @param {{ hostname: string, pathname: string }} location
+ * @returns {string|null}
+ */
+export function parseGitHubRepo({ hostname, pathname }) {
+  const match = hostname.match(/^([^.]+)\.github\.io$/)
+  if (!match) return null
+  const owner = match[1]
+  const repo = pathname.split('/').filter(Boolean)[0] ?? ''
+  return repo ? `${owner}/${repo}` : null
+}
