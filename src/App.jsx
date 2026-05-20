@@ -155,6 +155,8 @@ function newRoundState(
     record,
     money,
     activeBet,
+    revealedStrategyHands: [],
+    lockedStrategyAdvice: {},
   }
 }
 
@@ -239,6 +241,7 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settings, setSettings] = useState({
     extraPlayers: 0,
+    proMode: false,
     showCheatSheet: true,
     theme: 'minimal',
   })
@@ -380,6 +383,40 @@ function App() {
       players: previous.players.map((player) =>
         player.id === playerId ? { ...player, status } : player,
       ),
+    }))
+  }
+
+  const getStrategyAdviceForHand = (player, players, dealerCards) => {
+    const splitCountForHand = players.filter((currentPlayer) => isYouHand(currentPlayer.id)).length - 1
+    const canSplitForHand =
+      player.status === 'playing' &&
+      player.cards.length === 2 &&
+      player.cards[0].rank === player.cards[1].rank &&
+      splitCountForHand < 3
+
+    return getBasicStrategyAdvice(player.cards, getDealerUpCard(dealerCards), canSplitForHand)
+  }
+
+  const revealStrategyForHand = (playerId) => {
+    updateGame((previous) => {
+      if (previous.revealedStrategyHands.includes(playerId)) {
+        return previous
+      }
+
+      return {
+        ...previous,
+        revealedStrategyHands: [...previous.revealedStrategyHands, playerId],
+      }
+    })
+  }
+
+  const lockStrategyForHand = (playerId, advice) => {
+    updateGame((previous) => ({
+      ...previous,
+      lockedStrategyAdvice: {
+        ...previous.lockedStrategyAdvice,
+        [playerId]: advice,
+      },
     }))
   }
 
@@ -650,6 +687,9 @@ function App() {
 
     setBusy(true)
     const activeId = activePlayer.id
+    const actionAdvice = getStrategyAdviceForHand(activePlayer, snapshot.players, snapshot.dealer.cards)
+    revealStrategyForHand(activeId)
+    lockStrategyForHand(activeId, actionAdvice)
 
     await dealCardTo(activeId)
 
@@ -694,6 +734,9 @@ function App() {
       return
     }
 
+    const actionAdvice = getStrategyAdviceForHand(activePlayer, snapshot.players, snapshot.dealer.cards)
+    revealStrategyForHand(activePlayer.id)
+    lockStrategyForHand(activePlayer.id, actionAdvice)
     setPlayerStatus(activePlayer.id, 'stand')
     updateGame((previous) => ({
       ...previous,
@@ -719,6 +762,9 @@ function App() {
 
     setBusy(true)
     const activeId = activePlayer.id
+    const actionAdvice = getStrategyAdviceForHand(activePlayer, snapshot.players, snapshot.dealer.cards)
+    revealStrategyForHand(activeId)
+    lockStrategyForHand(activeId, actionAdvice)
 
     updateGame((previous) => ({
       ...previous,
@@ -768,6 +814,9 @@ function App() {
     setBusy(true)
 
     const activeId = activePlayer.id
+    const actionAdvice = getStrategyAdviceForHand(activePlayer, snapshot.players, snapshot.dealer.cards)
+    revealStrategyForHand(activeId)
+    lockStrategyForHand(activeId, actionAdvice)
     const splitId = `you-${splitCount + 1}`
     const splitCard = activePlayer.cards[1]
     const isPairOfAces = splitCard.rank === 'A'
@@ -895,6 +944,13 @@ function App() {
           return
         }
 
+        if (
+          settingsRef.current.proMode &&
+          !snapshot.revealedStrategyHands.includes(actingPlayer.id)
+        ) {
+          return
+        }
+
         const splitCountForTip = snapshot.players.filter((p) => isYouHand(p.id)).length - 1
         const canSplitForTip =
           actingPlayer.cards.length === 2 &&
@@ -995,7 +1051,16 @@ function App() {
     splitCount < 3
 
   const basicStrategyAdvice = getBasicStrategyAdvice(you.cards, dealerUpCard, canSplit)
-  const basicStrategyTip = basicStrategyAdvice.action
+  const lockedStrategyAdvice = game.lockedStrategyAdvice[you.id] ?? null
+  const displayedStrategyAdvice =
+    settings.proMode && lockedStrategyAdvice ? lockedStrategyAdvice : basicStrategyAdvice
+  const basicStrategyTip = displayedStrategyAdvice.action
+  const shouldRevealStrategy = !settings.proMode || game.revealedStrategyHands.includes(you.id)
+  const strategyTitle = shouldRevealStrategy ? displayedStrategyAdvice.action : 'Hidden until you act'
+  const strategyReason = shouldRevealStrategy
+    ? displayedStrategyAdvice.reason
+    : 'Pro Mode is on. Play your move first, then compare it with basic strategy.'
+  const strategyHandLabel = shouldRevealStrategy ? displayedStrategyAdvice.handLabel : 'Think it through first'
 
   const canEditBet = (game.phase === 'ready' || game.phase === 'finished') && !isBusy
   const totalCardsInShoe = game.shoe.length + game.discard.length
@@ -1010,6 +1075,10 @@ function App() {
     }
 
     if (game.phase === 'playing' && activePlayer && isYouHand(activePlayer.id) && !isBusy) {
+      if (settings.proMode && !shouldRevealStrategy) {
+        return 'Choose Manually'
+      }
+
       const action = getActionFromStrategyTip(basicStrategyTip)
       if (action === 'split') {
         return 'Split'
@@ -1275,10 +1344,10 @@ function App() {
                             {game.phase === 'finished' ? 'Next' : 'Redeal'}
                           </button>
                           <p className="mobile-play-tip">
-                            Best Move: <strong>{basicStrategyTip}</strong>
+                            Best Move: <strong>{strategyTitle}</strong>
                           </p>
                           <p className="mobile-play-why">
-                            Why: {basicStrategyAdvice.reason}
+                            Why: {strategyReason}
                           </p>
                         </section>
 
@@ -1413,6 +1482,21 @@ function App() {
                           Show cheat sheet card
                         </label>
 
+                        <label className="check-row" htmlFor="mobile-settings-pro-mode">
+                          <input
+                            id="mobile-settings-pro-mode"
+                            type="checkbox"
+                            checked={settingsDraft.proMode}
+                            onChange={(event) =>
+                              setSettingsDraft((previous) => ({
+                                ...previous,
+                                proMode: event.target.checked,
+                              }))
+                            }
+                          />
+                          Pro mode: hide strategy until you act
+                        </label>
+
                         <button className="primary" onClick={() => void applySettings()}>
                           Save Settings
                         </button>
@@ -1495,13 +1579,13 @@ function App() {
                         <strong>{dealerUpCard ? `${dealerUpCard.rank}${dealerUpCard.suit}` : '-'}</strong>
                       </p>
                       <p>
-                        Your Hand: <strong>{basicStrategyAdvice.handLabel}</strong>
+                        Your Hand: <strong>{strategyHandLabel}</strong>
                       </p>
                       <p>
-                        Your Best Move: <strong>{basicStrategyTip}</strong>
+                        Your Best Move: <strong>{strategyTitle}</strong>
                       </p>
                       <p className="strategy-reason">
-                        Why: {basicStrategyAdvice.reason}
+                        Why: {strategyReason}
                       </p>
                       <small>Static chart advice. No card counting adjustments.</small>
                     </section>
@@ -1575,6 +1659,21 @@ function App() {
                 }
               />
               Show cheat sheet card
+            </label>
+
+            <label className="check-row" htmlFor="settings-pro-mode">
+              <input
+                id="settings-pro-mode"
+                type="checkbox"
+                checked={settingsDraft.proMode}
+                onChange={(event) =>
+                  setSettingsDraft((previous) => ({
+                    ...previous,
+                    proMode: event.target.checked,
+                  }))
+                }
+              />
+              Pro mode: hide strategy until you act
             </label>
 
             <div className="modal-actions">
