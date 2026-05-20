@@ -3,10 +3,10 @@ import './Leaderboard.css'
 import { parseGitHubRepo } from '../siteConfig.js'
 
 const INITIAL_PLAYERS = [
-  { name: 'Lucas', score: 7 },
-  { name: 'Logan', score: 13 },
-  { name: 'Meg', score: 15 },
-  { name: 'Tessa', score: 17 },
+  { name: 'Lucas', score: 10 },
+  { name: 'Logan', score: 20 },
+  { name: 'Meg', score: 20 },
+  { name: 'Tessa', score: 21 },
 ]
 
 const WORKFLOW_FILE = 'save-scores.yml'
