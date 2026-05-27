@@ -237,12 +237,14 @@ export default function RecipeTracker() {
       ) : (
         <ul className="rt-recipe-list">
           {recipes.map((recipe) => (
-            <li key={recipe.id} className="rt-recipe-card" onClick={() => openDetail(recipe.id)}>
-              <strong className="rt-recipe-name">{recipe.name}</strong>
-              <span className="rt-recipe-meta">
-                {recipe.ingredients.length} ingredient{recipe.ingredients.length !== 1 ? 's' : ''} ·{' '}
-                {recipe.steps.length} step{recipe.steps.length !== 1 ? 's' : ''}
-              </span>
+            <li key={recipe.id}>
+              <button className="rt-recipe-card" onClick={() => openDetail(recipe.id)}>
+                <strong className="rt-recipe-name">{recipe.name}</strong>
+                <span className="rt-recipe-meta">
+                  {recipe.ingredients.length} ingredient{recipe.ingredients.length !== 1 ? 's' : ''} ·{' '}
+                  {recipe.steps.length} step{recipe.steps.length !== 1 ? 's' : ''}
+                </span>
+              </button>
             </li>
           ))}
         </ul>

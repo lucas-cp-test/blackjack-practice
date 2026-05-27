@@ -24,15 +24,21 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  width: 100%;
   padding: 1rem 1.25rem;
   border-radius: 1rem;
   background: rgba(15, 118, 110, 0.3);
   border: 1px solid rgba(45, 212, 191, 0.35);
   cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
   transition: background 0.15s;
 }
 
-.rt-recipe-card:hover {
+.rt-recipe-card:hover,
+.rt-recipe-card:focus-visible {
   background: rgba(13, 148, 136, 0.4);
 }
 
