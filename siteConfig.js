@@ -9,6 +9,11 @@ export const gamePages = [
     title: 'KubLeader',
     description: 'Track scores and crown the top player.',
   },
+  {
+    slug: 'recipe-tracker',
+    title: 'Recipe Tracker',
+    description: 'Build recipes with ingredients and step-by-step instructions.',
+  },
 ]
 
 function getEnvValue(name) {
