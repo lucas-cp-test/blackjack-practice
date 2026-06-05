@@ -32,7 +32,7 @@ export default function Leaderboard() {
   const [saveError, setSaveError] = useState('')
   const [showTokenForm, setShowTokenForm] = useState(false)
   const [tokenInput, setTokenInput] = useState('')
-  const [timer, dispatchTimer] = useReducer(countdownTimerReducer, undefined, createInitialTimerState)
+  const [timer, dispatchTimer] = useReducer(countdownTimerReducer, createInitialTimerState())
 
   const maxScore = Math.max(...players.map((p) => p.score))
   const sorted = [...players].sort((a, b) => b.score - a.score)
