@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import { parseGitHubRepo } from '../siteConfig.js'
+import {
+  countdownTimerReducer,
+  createInitialTimerState,
+  formatCountdown,
+  getNextCountdownValue,
+  TIMER_DURATION_SECONDS,
+} from './leaderboardTimer.js'
 
 // ─── Pure helpers mirroring Leaderboard.jsx logic ────────────────────────────
 
@@ -96,6 +103,31 @@ describe('buildScoresPayload', () => {
       { name: 'Lucas', score: 8 },
       { name: 'Tessa', score: 17 },
     ])
+  })
+})
+
+describe('countdown timer helpers', () => {
+  it('formats the initial countdown value as one minute', () => {
+    expect(formatCountdown(TIMER_DURATION_SECONDS)).toBe('01:00')
+  })
+
+  it('pads single digit seconds', () => {
+    expect(formatCountdown(9)).toBe('00:09')
+  })
+
+  it('never decrements below zero', () => {
+    expect(getNextCountdownValue(1)).toBe(0)
+    expect(getNextCountdownValue(0)).toBe(0)
+  })
+
+  it('stops the timer when the countdown reaches zero', () => {
+    const state = { timeLeft: 1, isRunning: true }
+    expect(countdownTimerReducer(state, { type: 'tick' })).toEqual({ timeLeft: 0, isRunning: false })
+  })
+
+  it('restores the initial timer state on reset', () => {
+    const state = { timeLeft: 14, isRunning: true }
+    expect(countdownTimerReducer(state, { type: 'reset' })).toEqual(createInitialTimerState())
   })
 })
 

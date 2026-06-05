@@ -1,6 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useReducer, useState } from 'react'
 import './Leaderboard.css'
 import { parseGitHubRepo } from '../siteConfig.js'
+import {
+  countdownTimerReducer,
+  createInitialTimerState,
+  formatCountdown,
+} from './leaderboardTimer.js'
 
 const INITIAL_PLAYERS = [
   { name: 'Lucas', score: 10 },
@@ -27,9 +32,20 @@ export default function Leaderboard() {
   const [saveError, setSaveError] = useState('')
   const [showTokenForm, setShowTokenForm] = useState(false)
   const [tokenInput, setTokenInput] = useState('')
+  const [timer, dispatchTimer] = useReducer(countdownTimerReducer, createInitialTimerState())
 
   const maxScore = Math.max(...players.map((p) => p.score))
   const sorted = [...players].sort((a, b) => b.score - a.score)
+
+  useEffect(() => {
+    if (!timer.isRunning) return undefined
+
+    const intervalId = window.setInterval(() => {
+      dispatchTimer({ type: 'tick' })
+    }, 1000)
+
+    return () => window.clearInterval(intervalId)
+  }, [timer.isRunning])
 
   function incrementScore(name) {
     setPlayers((prev) => prev.map((p) => (p.name === name ? { ...p, score: p.score + 1 } : p)))
@@ -98,9 +114,47 @@ export default function Leaderboard() {
     dispatchSaveWorkflow(token, players)
   }
 
+  function handleStartTimer() {
+    dispatchTimer({ type: 'start' })
+  }
+
+  function handleStopTimer() {
+    dispatchTimer({ type: 'stop' })
+  }
+
+  function handleResetTimer() {
+    dispatchTimer({ type: 'reset' })
+  }
+
   return (
     <div className="lb-shell">
       <h1 className="lb-title">KubLeader</h1>
+
+      <section className="lb-timer" aria-label="Countdown timer">
+        <h2 className="lb-timer-title">1 Minute Timer</h2>
+        <p className="lb-timer-display" role="timer" aria-live="polite">
+          {formatCountdown(timer.timeLeft)}
+        </p>
+        <div className="lb-timer-controls">
+          <button
+            className="lb-timer-btn"
+            onClick={handleStartTimer}
+            disabled={timer.isRunning || timer.timeLeft === 0}
+          >
+            Start
+          </button>
+          <button
+            className="lb-timer-btn lb-timer-btn--secondary"
+            onClick={handleStopTimer}
+            disabled={!timer.isRunning}
+          >
+            Stop
+          </button>
+          <button className="lb-timer-btn lb-timer-btn--secondary" onClick={handleResetTimer}>
+            Reset
+          </button>
+        </div>
+      </section>
 
       <ul className="lb-list">
         {sorted.map((player) => {
