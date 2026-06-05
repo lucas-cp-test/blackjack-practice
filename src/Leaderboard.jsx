@@ -1,6 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useReducer, useState } from 'react'
 import './Leaderboard.css'
 import { parseGitHubRepo } from '../siteConfig.js'
+import {
+  countdownTimerReducer,
+  createInitialTimerState,
+  formatCountdown,
+} from './leaderboardTimer.js'
 
 const INITIAL_PLAYERS = [
   { name: 'Lucas', score: 10 },
@@ -11,18 +16,6 @@ const INITIAL_PLAYERS = [
 
 const WORKFLOW_FILE = 'save-scores.yml'
 const TOKEN_KEY = 'kub-leader-gh-token'
-export const TIMER_DURATION_SECONDS = 60
-
-export function formatCountdown(totalSeconds) {
-  const clampedSeconds = Math.max(0, totalSeconds)
-  const minutes = String(Math.floor(clampedSeconds / 60)).padStart(2, '0')
-  const seconds = String(clampedSeconds % 60).padStart(2, '0')
-  return `${minutes}:${seconds}`
-}
-
-export function getNextCountdownValue(totalSeconds) {
-  return Math.max(0, totalSeconds - 1)
-}
 
 // sessionStorage keeps the token for this browser session only,
 // reducing the risk of long-term exposure compared to localStorage.
@@ -39,27 +32,20 @@ export default function Leaderboard() {
   const [saveError, setSaveError] = useState('')
   const [showTokenForm, setShowTokenForm] = useState(false)
   const [tokenInput, setTokenInput] = useState('')
-  const [timeLeft, setTimeLeft] = useState(TIMER_DURATION_SECONDS)
-  const [timerRunning, setTimerRunning] = useState(false)
+  const [timer, dispatchTimer] = useReducer(countdownTimerReducer, undefined, createInitialTimerState)
 
   const maxScore = Math.max(...players.map((p) => p.score))
   const sorted = [...players].sort((a, b) => b.score - a.score)
 
   useEffect(() => {
-    if (!timerRunning) return undefined
+    if (!timer.isRunning) return undefined
 
     const intervalId = window.setInterval(() => {
-      setTimeLeft((prev) => getNextCountdownValue(prev))
+      dispatchTimer({ type: 'tick' })
     }, 1000)
 
     return () => window.clearInterval(intervalId)
-  }, [timerRunning])
-
-  useEffect(() => {
-    if (timeLeft === 0) {
-      setTimerRunning(false)
-    }
-  }, [timeLeft])
+  }, [timer.isRunning])
 
   function incrementScore(name) {
     setPlayers((prev) => prev.map((p) => (p.name === name ? { ...p, score: p.score + 1 } : p)))
@@ -129,18 +115,15 @@ export default function Leaderboard() {
   }
 
   function handleStartTimer() {
-    if (timeLeft > 0) {
-      setTimerRunning(true)
-    }
+    dispatchTimer({ type: 'start' })
   }
 
   function handleStopTimer() {
-    setTimerRunning(false)
+    dispatchTimer({ type: 'stop' })
   }
 
   function handleResetTimer() {
-    setTimerRunning(false)
-    setTimeLeft(TIMER_DURATION_SECONDS)
+    dispatchTimer({ type: 'reset' })
   }
 
   return (
@@ -150,17 +133,21 @@ export default function Leaderboard() {
       <section className="lb-timer" aria-label="Countdown timer">
         <h2 className="lb-timer-title">1 Minute Timer</h2>
         <p className="lb-timer-display" role="timer" aria-live="polite">
-          {formatCountdown(timeLeft)}
+          {formatCountdown(timer.timeLeft)}
         </p>
         <div className="lb-timer-controls">
           <button
             className="lb-timer-btn"
             onClick={handleStartTimer}
-            disabled={timerRunning || timeLeft === 0}
+            disabled={timer.isRunning || timer.timeLeft === 0}
           >
             Start
           </button>
-          <button className="lb-timer-btn lb-timer-btn--secondary" onClick={handleStopTimer} disabled={!timerRunning}>
+          <button
+            className="lb-timer-btn lb-timer-btn--secondary"
+            onClick={handleStopTimer}
+            disabled={!timer.isRunning}
+          >
             Stop
           </button>
           <button className="lb-timer-btn lb-timer-btn--secondary" onClick={handleResetTimer}>
