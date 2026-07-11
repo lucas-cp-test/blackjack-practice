@@ -8,10 +8,10 @@ import {
 } from './leaderboardTimer.js'
 
 const INITIAL_PLAYERS = [
-  { name: 'Lucas', score: 11 },
+  { name: 'Lucas', score: 12 },
   { name: 'Logan', score: 22 },
   { name: 'Meg', score: 22 },
-  { name: 'Tessa', score: 25 },
+  { name: 'Tessa', score: 26 },
 ]
 
 const WORKFLOW_FILE = 'save-scores.yml'
