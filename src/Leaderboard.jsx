@@ -8,8 +8,8 @@ import {
 } from './leaderboardTimer.js'
 
 const INITIAL_PLAYERS = [
-  { name: 'Lucas', score: 12 },
-  { name: 'Logan', score: 22 },
+  { name: 'Lucas', score: 15 },
+  { name: 'Logan', score: 25 },
   { name: 'Meg', score: 22 },
   { name: 'Tessa', score: 26 },
 ]
