@@ -49,6 +49,7 @@ jobs:
           branch: update-scores-${{ github.run_number }}
           commit-message: 'chore: update leaderboard scores'
           title: 'Update KubLeader scores'
+          assignees: lucas-cp-test
           body: |
             Automated score update triggered from the KubLeader app.
 
