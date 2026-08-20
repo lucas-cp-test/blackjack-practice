@@ -9,9 +9,9 @@ import {
 
 const INITIAL_PLAYERS = [
   { name: 'Lucas', score: 15 },
-  { name: 'Logan', score: 25 },
+  { name: 'Logan', score: 26 },
   { name: 'Meg', score: 22 },
-  { name: 'Tessa', score: 26 },
+  { name: 'Tessa', score: 27 },
 ]
 
 const WORKFLOW_FILE = 'save-scores.yml'
@@ -26,7 +26,7 @@ const tokenStore = {
 
 export default function Leaderboard() {
   const [players, setPlayers] = useState(INITIAL_PLAYERS)
-  const [lastWinner, setLastWinner] = useState('')
+  const [lastWinner, setLastWinner] = useState('Logan')
   const [winnerMenuOpen, setWinnerMenuOpen] = useState(false)
   const [pendingSave, setPendingSave] = useState(false)
   const [saveStatus, setSaveStatus] = useState(null) // null | 'loading' | 'success' | 'error'
