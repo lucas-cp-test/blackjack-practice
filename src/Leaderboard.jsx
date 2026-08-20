@@ -9,9 +9,9 @@ import {
 
 const INITIAL_PLAYERS = [
   { name: 'Lucas', score: 15 },
-  { name: 'Logan', score: 25 },
+  { name: 'Logan', score: 26 },
   { name: 'Meg', score: 22 },
-  { name: 'Tessa', score: 26 },
+  { name: 'Tessa', score: 27 },
 ]
 
 const WORKFLOW_FILE = 'save-scores.yml'
