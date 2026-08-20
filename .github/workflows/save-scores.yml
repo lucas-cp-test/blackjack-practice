@@ -7,6 +7,10 @@ on:
         description: 'JSON array of player scores, e.g. [{"name":"Lucas","score":8}]'
         required: true
         type: string
+      lastWinner:
+        description: 'Name of the last player to win'
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -19,9 +23,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Update scores in Leaderboard.jsx
+      - name: Update scores and last winner in Leaderboard.jsx
         env:
           SCORES: ${{ inputs.scores }}
+          LAST_WINNER: ${{ inputs.lastWinner }}
         run: |
           node << 'NODEEOF'
           const fs = require('fs');
@@ -40,6 +45,17 @@ jobs:
             /const INITIAL_PLAYERS = \[[\s\S]*?\]/,
             `const INITIAL_PLAYERS = [\n${playersStr},\n]`
           );
+          
+          // Update last winner if provided
+          const lastWinner = process.env.LAST_WINNER?.trim();
+          if (lastWinner) {
+            const escapedWinner = lastWinner.replace(/'/g, "\\'");
+            content = content.replace(
+              /const \[lastWinner, setLastWinner\] = useState\([^)]*\)/,
+              `const [lastWinner, setLastWinner] = useState('${escapedWinner}')`
+            );
+          }
+          
           fs.writeFileSync('src/Leaderboard.jsx', content);
           NODEEOF
 
@@ -57,4 +73,6 @@ jobs:
             ```json
             ${{ inputs.scores }}
             ```
+
+            Last winner: ${{ inputs.lastWinner || '(none)' }}
           delete-branch: true
