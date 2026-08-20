@@ -26,6 +26,7 @@ const tokenStore = {
 
 export default function Leaderboard() {
   const [players, setPlayers] = useState(INITIAL_PLAYERS)
+  const [lastWinner, setLastWinner] = useState('')
   const [winnerMenuOpen, setWinnerMenuOpen] = useState(false)
   const [pendingSave, setPendingSave] = useState(false)
   const [saveStatus, setSaveStatus] = useState(null) // null | 'loading' | 'success' | 'error'
@@ -48,6 +49,7 @@ export default function Leaderboard() {
   }, [timer.isRunning])
 
   function incrementScore(name) {
+    setLastWinner(name)
     setPlayers((prev) => prev.map((p) => (p.name === name ? { ...p, score: p.score + 1 } : p)))
     setWinnerMenuOpen(false)
     setPendingSave(true)
@@ -77,7 +79,10 @@ export default function Leaderboard() {
             Accept: 'application/vnd.github+json',
             'X-GitHub-Api-Version': '2022-11-28',
           },
-          body: JSON.stringify({ ref: 'main', inputs: { scores: JSON.stringify(scores) } }),
+          body: JSON.stringify({
+            ref: 'main',
+            inputs: { scores: JSON.stringify(scores), lastWinner: lastWinner || '' },
+          }),
         },
       )
 
@@ -129,6 +134,7 @@ export default function Leaderboard() {
   return (
     <div className="lb-shell">
       <h1 className="lb-title">KubLeader</h1>
+      {lastWinner && <p className="lb-last-winner">Last winner: {lastWinner}</p>}
 
       <section className="lb-timer" aria-label="Countdown timer">
         <h2 className="lb-timer-title">1 Minute Timer</h2>
